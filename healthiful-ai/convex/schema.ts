@@ -43,6 +43,9 @@ export default defineSchema({
         weight: v.optional(v.string()), // specific weight or "RPE 8"
         notes: v.optional(v.string()),
         completed: v.boolean(),
+        type: v.optional(v.string()),
+        tip: v.optional(v.string()),
+        visualization_prompt: v.optional(v.string()),
       })
     ),
     status: v.string(), // 'generated', 'completed'

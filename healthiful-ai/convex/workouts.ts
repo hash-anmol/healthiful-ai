@@ -14,6 +14,9 @@ export const saveWorkout = mutation({
         weight: v.optional(v.string()),
         notes: v.optional(v.string()),
         completed: v.boolean(),
+        type: v.optional(v.string()),
+        tip: v.optional(v.string()),
+        visualization_prompt: v.optional(v.string()),
       })
     ),
   },
@@ -93,18 +96,55 @@ export const markExerciseComplete = mutation({
     });
 
     await ctx.db.patch(args.workoutId, { exercises: updatedExercises });
+  },
+});
 
-    // Also log this completion for analytics if completed is true
-    if (args.completed) {
-      await ctx.db.insert("exerciseLogs", {
-        userId: workout.userId,
-        workoutId: workout._id,
-        exerciseName: args.exerciseName,
-        date: workout.date,
-        setsCompleted: 1, // Simplified for now
-        weightUsed: 0, // Placeholder
-        repsCompleted: 0, // Placeholder
-      });
-    }
+export const replaceExercise = mutation({
+  args: {
+    workoutId: v.id("workouts"),
+    oldExerciseName: v.string(),
+    newExercise: v.object({
+      name: v.string(),
+      sets: v.number(),
+      reps: v.string(),
+      weight: v.optional(v.string()),
+      notes: v.optional(v.string()),
+      completed: v.boolean(),
+      type: v.optional(v.string()),
+      tip: v.optional(v.string()),
+      visualization_prompt: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const workout = await ctx.db.get(args.workoutId);
+    if (!workout) throw new Error("Workout not found");
+
+    const updatedExercises = workout.exercises.map((ex) => {
+      if (ex.name === args.oldExerciseName) {
+        return args.newExercise;
+      }
+      return ex;
+    });
+
+    await ctx.db.patch(args.workoutId, { exercises: updatedExercises });
+  },
+});
+
+export const getWorkoutsInRange = query({
+  args: {
+    userId: v.id("users"),
+    startDate: v.string(),
+    endDate: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const workouts = await ctx.db
+      .query("workouts")
+      .withIndex("by_user_date", (q) =>
+        q.eq("userId", args.userId)
+          .gte("date", args.startDate)
+          .lte("date", args.endDate)
+      )
+      .collect();
+    return workouts;
   },
 });
