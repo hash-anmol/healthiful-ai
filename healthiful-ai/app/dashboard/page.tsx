@@ -57,9 +57,9 @@ export default function DashboardPage() {
     }
   };
 
-  const handleToggle = async (exerciseName: string, completed: boolean) => {
+  const maybeCelebrate = (exerciseName: string, completed: boolean) => {
     if (!workout) return;
-    
+
     // Optimistically check if all other exercises are completed
     const willBeAllCompleted = completed && workout.exercises.every(ex => 
       ex.name === exerciseName ? true : ex.completed
@@ -73,11 +73,41 @@ export default function DashboardPage() {
         colors: ['#FF6B00', '#FFBB00', '#22C55E']
       });
     }
+  };
+
+  const handleToggle = async (exerciseName: string, completed: boolean) => {
+    if (!workout) return;
+    if (!user?._id) return;
+    maybeCelebrate(exerciseName, completed);
 
     await toggleComplete({
+      userId: user._id,
       workoutId: workout._id,
       exerciseName,
-      completed
+      completed,
+      date: workout.date,
+    });
+  };
+
+  const handleLogAndToggle = async (exerciseName: string, payload: {
+    setsCompleted: number;
+    repsCompleted: number;
+    weightUsed: number;
+    rpe?: number;
+  }) => {
+    if (!workout || !user?._id) return;
+    maybeCelebrate(exerciseName, true);
+
+    await toggleComplete({
+      userId: user._id,
+      workoutId: workout._id,
+      exerciseName,
+      completed: true,
+      date: workout.date,
+      setsCompleted: payload.setsCompleted,
+      repsCompleted: payload.repsCompleted,
+      weightUsed: payload.weightUsed,
+      rpe: payload.rpe,
     });
   };
 
@@ -258,6 +288,7 @@ export default function DashboardPage() {
                   workoutId={workout._id}
                   userId={user?._id}
                   onToggle={() => handleToggle(exercise.name, !exercise.completed)}
+                  onLog={(payload) => handleLogAndToggle(exercise.name, payload)}
                 />
               ))
             ) : (

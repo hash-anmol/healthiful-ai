@@ -24,6 +24,12 @@ interface ExerciseCardProps {
   workoutId: any;
   userId: any;
   onToggle: () => void;
+  onLog: (payload: {
+    setsCompleted: number;
+    repsCompleted: number;
+    weightUsed: number;
+    rpe?: number;
+  }) => void;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({ 
@@ -31,8 +37,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   workoutTitle, 
   workoutId,
   userId,
-  onToggle 
+  onToggle,
+  onLog,
 }) => {
+  const parseReps = (value: string) => {
+    const [first] = value.split('-');
+    const parsed = Number(first);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const parseWeight = (value?: string) => {
+    const match = value?.match(/([0-9]+(\.[0-9]+)?)/);
+    return match ? Number(match[1]) : 0;
+  };
   const [isExpanded, setIsExpanded] = useState(false);
   const [showQuestionPopup, setShowQuestionPopup] = useState(false);
   const [question, setQuestion] = useState('');
@@ -45,6 +62,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [exerciseDetails, setExerciseDetails] = useState<any>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [showDetailPopup, setShowDetailPopup] = useState(false);
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [setsCompleted, setSetsCompleted] = useState<number>(exercise.sets);
+  const [repsCompleted, setRepsCompleted] = useState<number>(() => parseReps(exercise.reps));
+  const [weightUsed, setWeightUsed] = useState<number>(() => parseWeight(exercise.weight));
+  const [rpe, setRpe] = useState<string>('');
 
   const askQuestion = useAction(api.actions.askExerciseQuestion);
   const suggestAlternative = useAction(api.actions.suggestExerciseAlternative);
@@ -65,6 +87,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       fetchDetails();
     }
   }, [showDetailPopup]);
+
+  useEffect(() => {
+    setSetsCompleted(exercise.sets);
+    setRepsCompleted(parseReps(exercise.reps));
+    setWeightUsed(parseWeight(exercise.weight));
+    setRpe('');
+  }, [exercise.name, exercise.sets, exercise.reps, exercise.weight]);
 
   const fetchImages = async () => {
     setIsLoadingImages(true);
@@ -148,12 +177,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         className="flex gap-4 items-center cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
-          className={cn(
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (exercise.completed) {
+                onToggle();
+              } else {
+                setShowLogModal(true);
+              }
+            }}
+            className={cn(
             "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 relative group shrink-0",
             exercise.completed 
               ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] shadow-[0_10px_20px_-5px_rgba(255,107,0,0.4)]" 
@@ -227,9 +260,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             transition={{ duration: 0.4, ease: "circOut" }}
             className="overflow-hidden"
           >
-            <div className="mt-5 pt-5 border-t border-slate-100 space-y-5">
+            <div className="mt-6 pt-2 space-y-5">
               {exercise.tip && (
-                <div className="bg-orange-50/50 rounded-2xl p-4 flex gap-4 border border-orange-100/50 items-start">
+                <div className="bg-orange-50/50 rounded-2xl p-4 flex gap-4 items-start">
                   <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center text-[#FF6B00] shrink-0 mt-0.5">
                     <Info size={18} />
                   </div>
@@ -533,6 +566,110 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                     </div>
                   </motion.div>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showLogModal && (
+          <div 
+            className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+            onClick={() => setShowLogModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-lg rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setShowLogModal(false)}
+                className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={22} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-[#FF6B00]">
+                  <Check size={24} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xl text-slate-900">Log this set</h4>
+                  <p className="text-slate-500 font-medium text-sm">{exercise.name}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Sets
+                    <input
+                      type="number"
+                      min={0}
+                      value={setsCompleted}
+                      onChange={(e) => setSetsCompleted(Number(e.target.value))}
+                      className="mt-2 w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Reps
+                    <input
+                      type="number"
+                      min={0}
+                      value={repsCompleted}
+                      onChange={(e) => setRepsCompleted(Number(e.target.value))}
+                      className="mt-2 w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Weight
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={weightUsed}
+                      onChange={(e) => setWeightUsed(Number(e.target.value))}
+                      className="mt-2 w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20"
+                    />
+                  </label>
+                </div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                  RPE (Optional)
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={rpe}
+                    onChange={(e) => setRpe(e.target.value)}
+                    placeholder="8"
+                    className="mt-2 w-full h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20"
+                  />
+                </label>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowLogModal(false)}
+                    className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold"
+                  >
+                    Not now
+                  </button>
+                  <button
+                    onClick={() => {
+                      onLog({
+                        setsCompleted,
+                        repsCompleted,
+                        weightUsed,
+                        rpe: rpe ? Number(rpe) : undefined,
+                      });
+                      setShowLogModal(false);
+                    }}
+                    className="flex-1 py-3 rounded-2xl bg-[#FF6B00] text-white font-bold shadow-lg shadow-orange-200"
+                  >
+                    Save & Check
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

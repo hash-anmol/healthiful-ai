@@ -1,6 +1,13 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+const parseWeight = (weight?: string) => {
+  if (!weight) return 0;
+  const match = weight.match(/([0-9]+(\.[0-9]+)?)/);
+  if (!match) return 0;
+  return Number(match[1]);
+};
+
 export const saveWorkout = mutation({
   args: {
     userId: v.id("users"),
@@ -80,9 +87,15 @@ export const getRecentWorkouts = query({
 
 export const markExerciseComplete = mutation({
   args: {
+    userId: v.id("users"),
     workoutId: v.id("workouts"),
     exerciseName: v.string(),
     completed: v.boolean(),
+    date: v.string(),
+    setsCompleted: v.optional(v.number()),
+    repsCompleted: v.optional(v.number()),
+    weightUsed: v.optional(v.number()),
+    rpe: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
@@ -96,6 +109,27 @@ export const markExerciseComplete = mutation({
     });
 
     await ctx.db.patch(args.workoutId, { exercises: updatedExercises });
+
+    if (args.completed) {
+      const workoutExercise = workout.exercises.find((ex) => ex.name === args.exerciseName);
+      const defaultReps = Number(String((workoutExercise?.reps || "0")).split("-")[0]) || 0;
+      const setsCompleted = args.setsCompleted ?? workoutExercise?.sets ?? 0;
+      const repsCompleted = args.repsCompleted ?? defaultReps;
+      const weightUsed = args.weightUsed ?? parseWeight(workoutExercise?.weight);
+
+      if (setsCompleted > 0 && repsCompleted > 0) {
+        await ctx.db.insert("exerciseLogs", {
+          userId: args.userId,
+          workoutId: args.workoutId,
+          exerciseName: args.exerciseName,
+          date: args.date,
+          setsCompleted,
+          repsCompleted,
+          weightUsed,
+          rpe: args.rpe,
+        });
+      }
+    }
   },
 });
 

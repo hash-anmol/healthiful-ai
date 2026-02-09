@@ -60,5 +60,8 @@ export default defineSchema({
     weightUsed: v.number(),
     repsCompleted: v.number(),
     rpe: v.optional(v.number()),
-  }).index("by_user_exercise", ["userId", "exerciseName"]),
+  })
+    .index("by_user_exercise", ["userId", "exerciseName"])
+    .index("by_user_date", ["userId", "date"])
+    .index("by_workout_exercise", ["workoutId", "exerciseName"]),
 });
