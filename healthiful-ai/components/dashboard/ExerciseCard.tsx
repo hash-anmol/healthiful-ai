@@ -40,7 +40,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   onToggle,
   onLog,
 }) => {
-  const parseReps = (value: string) => {
+  const parseReps = (value?: string) => {
+    if (!value) return 0;
     const [first] = value.split('-');
     const parsed = Number(first);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -602,7 +603,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
                     Sets
                     <input

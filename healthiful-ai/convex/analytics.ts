@@ -6,20 +6,6 @@ const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const clampNumber = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-const parseWeight = (weight?: string) => {
-  if (!weight) return 0;
-  const match = weight.match(/([0-9]+(\.[0-9]+)?)/);
-  if (!match) return 0;
-  return Number(match[1]);
-};
-
-const parseReps = (reps?: string) => {
-  if (!reps) return 0;
-  const [first] = reps.split("-");
-  const value = Number(first);
-  return Number.isFinite(value) ? value : 0;
-};
-
 const buildEncouragement = (stats: {
   weeklyWorkouts: number;
   weeklyVolume: number;

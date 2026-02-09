@@ -11,6 +11,7 @@ import { format, startOfWeek, subWeeks, endOfWeek, subDays } from 'date-fns';
 const toISODate = (date: Date) => format(date, 'yyyy-MM-dd');
 
 const renderDelta = (current: number, previous: number, suffix = '') => {
+  if (!previous && current === 0) return `No data yet${suffix}`;
   if (!previous) return `New baseline${suffix}`;
   const delta = current - previous;
   const percent = Math.round((delta / previous) * 100);

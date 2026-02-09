@@ -110,14 +110,36 @@ export const markExerciseComplete = mutation({
 
     await ctx.db.patch(args.workoutId, { exercises: updatedExercises });
 
-    if (args.completed) {
-      const workoutExercise = workout.exercises.find((ex) => ex.name === args.exerciseName);
-      const defaultReps = Number(String((workoutExercise?.reps || "0")).split("-")[0]) || 0;
-      const setsCompleted = args.setsCompleted ?? workoutExercise?.sets ?? 0;
-      const repsCompleted = args.repsCompleted ?? defaultReps;
-      const weightUsed = args.weightUsed ?? parseWeight(workoutExercise?.weight);
+    const existingLog = await ctx.db
+      .query("exerciseLogs")
+      .withIndex("by_workout_exercise", (q) =>
+        q.eq("workoutId", args.workoutId).eq("exerciseName", args.exerciseName)
+      )
+      .first();
 
-      if (setsCompleted > 0 && repsCompleted > 0) {
+    if (!args.completed) {
+      if (existingLog) {
+        await ctx.db.delete(existingLog._id);
+      }
+      return;
+    }
+
+    const workoutExercise = workout.exercises.find((ex) => ex.name === args.exerciseName);
+    const defaultReps = Number(String((workoutExercise?.reps || "0")).split("-")[0]) || 0;
+    const setsCompleted = args.setsCompleted ?? workoutExercise?.sets ?? 0;
+    const repsCompleted = args.repsCompleted ?? defaultReps;
+    const weightUsed = args.weightUsed ?? parseWeight(workoutExercise?.weight);
+
+    if (setsCompleted > 0 && repsCompleted > 0) {
+      if (existingLog) {
+        await ctx.db.patch(existingLog._id, {
+          date: args.date,
+          setsCompleted,
+          repsCompleted,
+          weightUsed,
+          rpe: args.rpe,
+        });
+      } else {
         await ctx.db.insert("exerciseLogs", {
           userId: args.userId,
           workoutId: args.workoutId,
