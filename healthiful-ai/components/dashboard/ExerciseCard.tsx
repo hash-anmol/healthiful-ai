@@ -44,6 +44,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [exerciseDetails, setExerciseDetails] = useState<any>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [showDetailPopup, setShowDetailPopup] = useState(false);
 
   const askQuestion = useAction(api.actions.askExerciseQuestion);
   const suggestAlternative = useAction(api.actions.suggestExerciseAlternative);
@@ -54,11 +55,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isExpanded) {
-      if (images.length === 0) fetchImages();
-      if (!exerciseDetails) fetchDetails();
+    if (isExpanded && images.length === 0) {
+      fetchImages();
     }
   }, [isExpanded]);
+
+  useEffect(() => {
+    if (showDetailPopup && !exerciseDetails) {
+      fetchDetails();
+    }
+  }, [showDetailPopup]);
 
   const fetchImages = async () => {
     setIsLoadingImages(true);
@@ -220,146 +226,184 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
             className="mt-6 pt-6 border-t border-slate-100 space-y-6"
           >
-            {/* Top Section: Hero Image */}
-            <div className="relative rounded-3xl overflow-hidden aspect-[16/9] bg-slate-100 border border-slate-200 shadow-inner group">
-              {isLoadingImages ? (
-                <Skeleton className="w-full h-full" />
-              ) : images.length > 0 ? (
-                <>
-                  <img 
-                    src={images[0].url} 
-                    alt={exercise.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-6">
-                    <p className="text-white text-sm font-medium opacity-90">{images[0].title}</p>
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                  <span className="material-icons-round text-4xl mb-2">image_not_supported</span>
-                  <p className="text-xs font-bold uppercase tracking-widest">No visual reference available</p>
-                </div>
-              )}
-            </div>
+            {exercise.tip && (
+              <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 border border-slate-100">
+                <Info size={18} className="text-[#FF6B00] shrink-0 mt-0.5" />
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  <span className="font-bold text-slate-900">Coach's Tip:</span> {exercise.tip}
+                </p>
+              </div>
+            )}
 
-            {/* AI Generated Details */}
-            <div className="space-y-6">
-              {isLoadingDetails ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-24 w-full rounded-2xl" />
-                </div>
-              ) : exerciseDetails ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <section>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                        Why this works
-                      </h4>
-                      <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        {exerciseDetails.why}
-                      </p>
-                    </section>
-
-                    <section>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        Target Areas
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {exerciseDetails.affectedAreas.map((area: string, i: number) => (
-                          <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
-                            {area}
-                          </span>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-
-                  <div className="space-y-4">
-                    <section>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        Key Benefits
-                      </h4>
-                      <ul className="space-y-2">
-                        {exerciseDetails.benefits.map((benefit: string, i: number) => (
-                          <li key={i} className="flex gap-3 items-start text-sm text-slate-600 font-medium bg-green-50/50 p-3 rounded-xl border border-green-100/50">
-                            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                        Coach Tips
-                      </h4>
-                      <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
-                        {exerciseDetails.formTips.map((tip: string, i: number) => (
-                          <p key={i} className="text-sm text-purple-700 font-medium mb-2 last:mb-0 flex gap-2">
-                            <span className="text-purple-400">•</span> {tip}
-                          </p>
-                        ))}
-                      </div>
-                    </section>
-                  </div>
-                </div>
-              ) : null}
-
-              {exercise.tip && !exerciseDetails && (
-                <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 border border-slate-100">
-                  <Info size={18} className="text-[#FF6B00] shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    <span className="font-bold text-slate-900">Coach's Tip:</span> {exercise.tip}
-                  </p>
-                </div>
-              )}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center px-1">
+                <p className="text-xs text-slate-400 font-black uppercase tracking-[0.2em]">Visual Reference</p>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetailPopup(true);
+                  }}
+                  className="flex items-center gap-1.5 text-[#FF6B00] text-xs font-black uppercase tracking-wider hover:opacity-80 transition-opacity"
+                >
+                  <span className="material-icons-round text-lg">analytics</span>
+                  Detailed Analysis
+                </button>
+              </div>
               
-              <div className="space-y-3 pt-4">
-                <p className="text-xs text-slate-400 font-black uppercase tracking-[0.2em] px-1">Visual Reference Gallery</p>
-                <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar">
-                  {isLoadingImages ? (
-                    [1, 2, 3].map(i => <Skeleton key={i} className="w-40 aspect-square rounded-3xl shrink-0" />)
-                  ) : images.length > 1 ? (
-                    images.slice(1).map((img, i) => (
-                      <motion.div 
-                        key={i} 
-                        whileHover={{ scale: 1.05, rotate: i % 2 === 0 ? 1 : -1 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedImage(img.url)}
-                        className="w-40 aspect-square bg-white rounded-3xl overflow-hidden shrink-0 shadow-md border border-slate-100 relative group cursor-zoom-in"
-                      >
-                        <img 
-                          src={img.thumbnail} 
-                          alt={img.title} 
-                          className="w-full h-full object-cover" 
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&h=200&fit=crop';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                          <p className="text-[10px] text-white font-bold leading-tight line-clamp-2">{img.title}</p>
-                        </div>
-                      </motion.div>
-                    ))
-                  ) : images.length === 0 && !isLoadingImages && (
-                    <div className="w-full h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 text-xs italic border border-dashed border-slate-200">
-                      No additional images
-                    </div>
-                  )}
-                </div>
+              <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar">
+                {isLoadingImages ? (
+                  [1, 2, 3].map(i => <Skeleton key={i} className="w-40 aspect-square rounded-3xl shrink-0" />)
+                ) : images.length > 0 ? (
+                  images.map((img, i) => (
+                    <motion.div 
+                      key={i} 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedImage(img.url)}
+                      className="w-40 aspect-square bg-white rounded-3xl overflow-hidden shrink-0 shadow-md border border-slate-100 relative group cursor-zoom-in"
+                    >
+                      <img 
+                        src={img.thumbnail} 
+                        alt={img.title} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&h=200&fit=crop';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                        <p className="text-[10px] text-white font-bold leading-tight line-clamp-2">{img.title}</p>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="w-full h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 text-xs italic border border-dashed border-slate-200">
+                    No reference images found
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Detailed Analysis Modal */}
+      <AnimatePresence>
+        {showDetailPopup && (
+          <div 
+            className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+            onClick={() => setShowDetailPopup(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setShowDetailPopup(false)}
+                className="absolute top-8 right-8 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-[#FF6B00]">
+                  <span className="material-icons-round text-3xl">analytics</span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-2xl text-slate-900">AI Detailed Analysis</h4>
+                  <p className="text-slate-500 font-medium">{exercise.name}</p>
+                </div>
+              </div>
+
+              {isLoadingDetails ? (
+                <div className="space-y-6">
+                  <Skeleton className="h-40 w-full rounded-3xl" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Skeleton className="h-24 rounded-2xl" />
+                    <Skeleton className="h-24 rounded-2xl" />
+                  </div>
+                </div>
+              ) : exerciseDetails ? (
+                <div className="space-y-8">
+                  {/* Hero Image in Modal */}
+                  {images.length > 0 && (
+                    <div className="relative rounded-3xl overflow-hidden aspect-[16/9] bg-slate-100 border border-slate-200 shadow-inner">
+                      <img 
+                        src={images[0].url} 
+                        alt={exercise.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
+                      <section>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          Why this works
+                        </h4>
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                          {exerciseDetails.why}
+                        </p>
+                      </section>
+
+                      <section>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          Target Areas
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {exerciseDetails.affectedAreas.map((area: string, i: number) => (
+                            <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+
+                    <div className="space-y-6">
+                      <section>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          Key Benefits
+                        </h4>
+                        <ul className="space-y-2">
+                          {exerciseDetails.benefits.map((benefit: string, i: number) => (
+                            <li key={i} className="flex gap-3 items-start text-sm text-slate-600 font-medium bg-green-50/50 p-3 rounded-xl border border-green-100/50">
+                              <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
+                              {benefit}
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+
+                      <section>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                          Coach Form Tips
+                        </h4>
+                        <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                          {exerciseDetails.formTips.map((tip: string, i: number) => (
+                            <p key={i} className="text-sm text-purple-700 font-medium mb-2 last:mb-0 flex gap-2">
+                              <span className="text-purple-400">•</span> {tip}
+                            </p>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-slate-400">Failed to load details. Please try again.</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
