@@ -140,11 +140,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
   return (
     <div className={cn(
-      "bg-white rounded-[2.5rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-5 overflow-hidden transition-all duration-500",
+      "bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-4 transition-all duration-500",
       isExpanded && "shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-orange-100"
     )}>
       <div 
-        className="flex gap-5 items-center cursor-pointer"
+        className="flex gap-4 items-center cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <button 
@@ -153,7 +153,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             onToggle();
           }}
           className={cn(
-            "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 relative group",
+            "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 relative group shrink-0",
             exercise.completed 
               ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] shadow-[0_10px_20px_-5px_rgba(255,107,0,0.4)]" 
               : "bg-slate-50 hover:bg-orange-50 border border-slate-100"
@@ -168,7 +168,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 exit={{ scale: 0, rotate: 45 }} 
                 className="text-white"
               >
-                <Check size={32} strokeWidth={3.5} />
+                <Check className="w-6 h-6 sm:w-8 sm:h-8" strokeWidth={3.5} />
               </motion.div>
             ) : (
               <motion.div 
@@ -176,34 +176,34 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }} 
-                className="w-5 h-5 rounded-full border-[2.5px] border-slate-300 group-hover:border-[#FF6B00] transition-colors" 
+                className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-[2.5px] border-slate-300 group-hover:border-[#FF6B00] transition-colors" 
               />
             )}
           </AnimatePresence>
         </button>
 
-        <div className="flex-grow">
-          <div className="flex justify-between items-start">
+        <div className="flex-grow min-w-0">
+          <div className="flex justify-between items-start gap-2">
             <h3 className={cn(
-              "font-extrabold text-xl leading-tight transition-all duration-500", 
+              "font-extrabold text-lg sm:text-xl leading-tight transition-all duration-500 truncate", 
               exercise.completed ? "text-slate-400 line-through decoration-2" : "text-slate-900"
             )}>
               {exercise.name}
             </h3>
-            <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowQuestionPopup(true)} className="text-slate-300 hover:text-[#FF6B00] transition-all p-2 hover:bg-orange-50 rounded-xl">
-                <HelpCircle size={22} />
+            <div className="flex gap-0.5 items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowQuestionPopup(true)} className="text-slate-300 hover:text-[#FF6B00] transition-all p-1.5 hover:bg-orange-50 rounded-xl">
+                <HelpCircle size={20} />
               </button>
               <div className={cn("text-slate-300 transition-all duration-500", isExpanded && "rotate-180 text-orange-500")}>
-                <ChevronDown size={24} />
+                <ChevronDown size={22} />
               </div>
             </div>
           </div>
           
-          <div className="flex gap-3 text-xs font-bold mt-2.5">
+          <div className="flex flex-wrap gap-2 text-[10px] sm:text-xs font-bold mt-2">
             {exercise.type && (
               <span className={cn(
-                "px-2.5 py-1.5 rounded-xl uppercase tracking-wider shadow-sm",
+                "px-2 py-1 rounded-lg uppercase tracking-wider shadow-sm",
                 exercise.type === 'warmup' ? "bg-blue-50 text-blue-600 border border-blue-100" :
                 exercise.type === 'abs' ? "bg-purple-50 text-purple-600 border border-purple-100" :
                 "bg-slate-50 text-slate-500 border border-slate-100"
@@ -211,8 +211,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 {exercise.type}
               </span>
             )}
-            <span className="bg-orange-50 text-[#FF6B00] px-2.5 py-1.5 rounded-xl border border-orange-100 shadow-sm">{exercise.sets} Sets</span>
-            <span className="bg-slate-50 text-slate-600 px-2.5 py-1.5 rounded-xl border border-slate-100 shadow-sm">{exercise.reps} Reps</span>
+            <span className="bg-orange-50 text-[#FF6B00] px-2 py-1 rounded-lg border border-orange-100 shadow-sm">{exercise.sets} Sets</span>
+            <span className="bg-slate-50 text-slate-600 px-2 py-1 rounded-lg border border-slate-100 shadow-sm">{exercise.reps} Reps</span>
           </div>
         </div>
       </div>
@@ -223,63 +223,62 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             initial={{ height: 0, opacity: 0 }} 
             animate={{ height: 'auto', opacity: 1 }} 
             exit={{ height: 0, opacity: 0 }} 
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-            className="mt-6 pt-6 border-t border-slate-100 space-y-6"
+            transition={{ duration: 0.4, ease: "circOut" }}
+            className="overflow-hidden"
           >
-            {exercise.tip && (
-              <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 border border-slate-100">
-                <Info size={18} className="text-[#FF6B00] shrink-0 mt-0.5" />
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  <span className="font-bold text-slate-900">Coach's Tip:</span> {exercise.tip}
-                </p>
-              </div>
-            )}
+            <div className="mt-5 pt-5 border-t border-slate-100 space-y-5">
+              {exercise.tip && (
+                <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 border border-slate-100">
+                  <Info size={18} className="text-[#FF6B00] shrink-0 mt-0.5" />
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <span className="font-bold text-slate-900">Coach's Tip:</span> {exercise.tip}
+                  </p>
+                </div>
+              )}
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center px-1">
-                <p className="text-xs text-slate-400 font-black uppercase tracking-[0.2em]">Visual Reference</p>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDetailPopup(true);
-                  }}
-                  className="flex items-center gap-1.5 text-[#FF6B00] text-xs font-black uppercase tracking-wider hover:opacity-80 transition-opacity"
-                >
-                  <span className="material-icons-round text-lg">analytics</span>
-                  Detailed Analysis
-                </button>
-              </div>
-              
-              <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar">
-                {isLoadingImages ? (
-                  [1, 2, 3].map(i => <Skeleton key={i} className="w-40 aspect-square rounded-3xl shrink-0" />)
-                ) : images.length > 0 ? (
-                  images.map((img, i) => (
-                    <motion.div 
-                      key={i} 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedImage(img.url)}
-                      className="w-40 aspect-square bg-white rounded-3xl overflow-hidden shrink-0 shadow-md border border-slate-100 relative group cursor-zoom-in"
-                    >
-                      <img 
-                        src={img.thumbnail} 
-                        alt={img.title} 
-                        className="w-full h-full object-cover" 
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&h=200&fit=crop';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                        <p className="text-[10px] text-white font-bold leading-tight line-clamp-2">{img.title}</p>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="w-full h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 text-xs italic border border-dashed border-slate-200">
-                    No reference images found
-                  </div>
-                )}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center px-1">
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Visual Reference</p>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDetailPopup(true);
+                    }}
+                    className="flex items-center gap-1.5 text-[#FF6B00] text-[10px] font-black uppercase tracking-wider hover:opacity-80 transition-opacity bg-orange-50 px-2.5 py-1.5 rounded-lg border border-orange-100"
+                  >
+                    <span className="material-icons-round text-sm">analytics</span>
+                    Detailed Analysis
+                  </button>
+                </div>
+                
+                <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar -mx-1 px-1">
+                  {isLoadingImages ? (
+                    [1, 2, 3].map(i => <Skeleton key={i} className="w-32 sm:w-40 aspect-square rounded-2xl shrink-0" />)
+                  ) : images.length > 0 ? (
+                    images.map((img, i) => (
+                      <motion.div 
+                        key={i} 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedImage(img.url)}
+                        className="w-32 sm:w-40 aspect-square bg-white rounded-2xl overflow-hidden shrink-0 shadow-md border border-slate-100 relative group cursor-zoom-in"
+                      >
+                        <img 
+                          src={img.thumbnail} 
+                          alt={img.title} 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200&h=200&fit=crop';
+                          }}
+                        />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="w-full h-20 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 text-[10px] italic border border-dashed border-slate-200">
+                      No reference images found
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -290,46 +289,46 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       <AnimatePresence>
         {showDetailPopup && (
           <div 
-            className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md"
             onClick={() => setShowDetailPopup(false)}
           >
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar"
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto custom-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={() => setShowDetailPopup(false)}
-                className="absolute top-8 right-8 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute top-5 right-5 sm:top-8 sm:right-8 text-slate-400 hover:text-slate-600 transition-colors z-10 p-1 bg-white/80 rounded-full backdrop-blur-sm"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
 
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-[#FF6B00]">
-                  <span className="material-icons-round text-3xl">analytics</span>
+              <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-[#FF6B00] shrink-0">
+                  <span className="material-icons-round text-2xl sm:text-3xl">analytics</span>
                 </div>
-                <div>
-                  <h4 className="font-bold text-2xl text-slate-900">AI Detailed Analysis</h4>
-                  <p className="text-slate-500 font-medium">{exercise.name}</p>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-xl sm:text-2xl text-slate-900 truncate">Detailed Analysis</h4>
+                  <p className="text-slate-500 font-medium text-sm sm:text-base truncate">{exercise.name}</p>
                 </div>
               </div>
 
               {isLoadingDetails ? (
                 <div className="space-y-6">
-                  <Skeleton className="h-40 w-full rounded-3xl" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-24 rounded-2xl" />
-                    <Skeleton className="h-24 rounded-2xl" />
+                  <Skeleton className="h-48 w-full rounded-3xl" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Skeleton className="h-32 rounded-2xl" />
+                    <Skeleton className="h-32 rounded-2xl" />
                   </div>
                 </div>
               ) : exerciseDetails ? (
-                <div className="space-y-8">
+                <div className="space-y-6 sm:space-y-8">
                   {/* Hero Image in Modal */}
                   {images.length > 0 && (
-                    <div className="relative rounded-3xl overflow-hidden aspect-[16/9] bg-slate-100 border border-slate-200 shadow-inner">
+                    <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden aspect-video bg-slate-100 border border-slate-200 shadow-inner">
                       <img 
                         src={images[0].url} 
                         alt={exercise.name} 
@@ -338,26 +337,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                    <div className="space-y-5 sm:space-y-6">
                       <section>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           Why this works
                         </h4>
-                        <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
                           {exerciseDetails.why}
                         </p>
                       </section>
 
                       <section>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                           Target Areas
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {exerciseDetails.affectedAreas.map((area: string, i: number) => (
-                            <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100">
+                            <span key={i} className="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100">
                               {area}
                             </span>
                           ))}
@@ -365,16 +364,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                       </section>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5 sm:space-y-6">
                       <section>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                           Key Benefits
                         </h4>
                         <ul className="space-y-2">
                           {exerciseDetails.benefits.map((benefit: string, i: number) => (
-                            <li key={i} className="flex gap-3 items-start text-sm text-slate-600 font-medium bg-green-50/50 p-3 rounded-xl border border-green-100/50">
-                              <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
+                            <li key={i} className="flex gap-2.5 items-start text-xs sm:text-sm text-slate-600 font-medium bg-green-50/50 p-3 rounded-xl border border-green-100/50">
+                              <Check size={14} className="text-green-500 shrink-0 mt-0.5" />
                               {benefit}
                             </li>
                           ))}
@@ -382,13 +381,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                       </section>
 
                       <section>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                           Coach Form Tips
                         </h4>
                         <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
                           {exerciseDetails.formTips.map((tip: string, i: number) => (
-                            <p key={i} className="text-sm text-purple-700 font-medium mb-2 last:mb-0 flex gap-2">
+                            <p key={i} className="text-xs sm:text-sm text-purple-700 font-medium mb-1.5 last:mb-0 flex gap-2">
                               <span className="text-purple-400">•</span> {tip}
                             </p>
                           ))}
@@ -397,11 +396,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-slate-400">Failed to load details. Please try again.</p>
-                </div>
-              )}
+              ) : null}
             </motion.div>
           </div>
         )}
