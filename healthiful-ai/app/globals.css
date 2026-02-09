@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F8FAFC;
+  --foreground: #1E293B;
+  --primary: #FF6B00;
+  --primary-light: #FF8533;
+  --primary-dark: #CC5500;
+  --background-light: #F8FAFC;
+  --background-dark: #0F172A;
+  --card-light: #FFFFFF;
+  --card-dark: #1E293B;
+  --text-light: #1E293B;
+  --text-dark: #F1F5F9;
+  --subtext-light: #64748B;
+  --subtext-dark: #94A3B8;
+  --primary-foreground: #ffffff;
+  --secondary: #FFFFFF;
+  --secondary-foreground: #FF6B00;
+  --surface: #ffffff;
+  --surface-foreground: #1A1A1A;
+  --muted: #E2E8F0;
+  --muted-foreground: #666666;
+  --accent: #FF6B00;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #FF6B00;
+  --radius: 1rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-background-light: var(--background-light);
+  --color-background-dark: var(--background-dark);
+  --color-card-light: var(--card-light);
+  --color-card-dark: var(--card-dark);
+  --color-text-light: var(--text-light);
+  --color-text-dark: var(--text-dark);
+  --color-subtext-light: var(--subtext-light);
+  --color-subtext-dark: var(--subtext-dark);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+  --font-sans: var(--font-plus-jakarta);
+  --font-display: var(--font-plus-jakarta);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plus-jakarta), sans-serif;
+  min-height: max(884px, 100dvh);
+  @apply antialiased;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.arc-container {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arc-svg {
+  transform: rotate(135deg);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.arc-bg {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.arc-progress {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease-out;
+}
