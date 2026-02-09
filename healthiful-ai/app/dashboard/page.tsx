@@ -9,6 +9,7 @@ import { ExerciseCard } from "@/components/dashboard/ExerciseCard";
 import { MessageSquare, RefreshCcw, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 export default function DashboardPage() {
   const user = useQuery(api.users.getMe);
@@ -58,6 +59,21 @@ export default function DashboardPage() {
 
   const handleToggle = async (exerciseName: string, completed: boolean) => {
     if (!workout) return;
+    
+    // Optimistically check if all other exercises are completed
+    const willBeAllCompleted = completed && workout.exercises.every(ex => 
+      ex.name === exerciseName ? true : ex.completed
+    );
+
+    if (willBeAllCompleted) {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FF6B00', '#FFBB00', '#22C55E']
+      });
+    }
+
     await toggleComplete({
       workoutId: workout._id,
       exerciseName,

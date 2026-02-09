@@ -181,3 +181,43 @@ export const getExerciseImages = action({
     }
   },
 });
+
+export const getExerciseDetails = action({
+  args: {
+    exerciseName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+    const prompt = `
+      Provide a detailed analysis of the exercise: "${args.exerciseName}".
+      Include:
+      1. Why this exercise is effective.
+      2. Muscle groups and areas it specifically affects.
+      3. Primary benefits.
+      4. Form tips.
+      
+      Return ONLY a JSON object:
+      {
+        "why": "...",
+        "affectedAreas": ["...", "..."],
+        "benefits": ["...", "..."],
+        "formTips": ["...", "..."]
+      }
+    `;
+
+    try {
+      const result = await model.generateContent(prompt);
+      const text = (await result.response).text();
+      const jsonString = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.error("AI Details Generation failed:", error);
+      return null;
+    }
+  },
+});
