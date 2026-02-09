@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Trophy, Flame, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
 import { format, startOfWeek, subWeeks, endOfWeek, subDays } from 'date-fns';
@@ -78,126 +79,168 @@ export default function AnalyticsPage() {
 
   const encouragement = stats?.encouragement ?? 'Log a workout and watch your progress build.';
 
+  if (user === undefined || stats === undefined) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex flex-col space-y-2">
+          <Skeleton className="h-10 w-48 rounded-xl" />
+          <Skeleton className="h-5 w-64 rounded-xl" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-32 rounded-3xl" />
+          <Skeleton className="h-32 rounded-3xl" />
+          <Skeleton className="h-32 rounded-3xl" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <Skeleton className="h-[400px] rounded-3xl" />
+          <Skeleton className="h-[400px] rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const hasData = stats.weeklyVolume > 0 || stats.weeklyWorkouts > 0;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Your Progress</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Your Progress</h1>
+        <p className="text-muted-foreground font-medium">
           {encouragement}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Weekly Workouts</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Weekly Workouts</CardTitle>
+            <CalendarDays className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.weeklyWorkouts ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-black text-slate-900">{stats?.weeklyWorkouts ?? 0}</div>
+            <p className="text-xs font-semibold text-slate-400 mt-1">
               {renderDelta(stats?.weeklyWorkouts ?? 0, stats?.previousWeeklyWorkouts ?? 0)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Volume</CardTitle>
+            <Trophy className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(stats?.weeklyVolume ?? 0).toLocaleString()} kg
+            <div className="text-3xl font-black text-slate-900">
+              {Math.round(stats?.weeklyVolume ?? 0).toLocaleString()} <span className="text-lg font-bold text-slate-400">kg</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs font-semibold text-slate-400 mt-1">
               {renderDelta(stats?.weeklyVolume ?? 0, stats?.previousWeeklyVolume ?? 0)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Streak</CardTitle>
-            <Flame className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Active Streak</CardTitle>
+            <Flame className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.streak ?? 0} Days</div>
-            <p className="text-xs text-muted-foreground">Keep the fire burning!</p>
+            <div className="text-3xl font-black text-slate-900">{stats?.streak ?? 0} <span className="text-lg font-bold text-slate-400">Days</span></div>
+            <p className="text-xs font-semibold text-slate-400 mt-1">Keep the fire burning!</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Volume Load</CardTitle>
-            <CardDescription>
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-bold text-slate-900">Volume Load</CardTitle>
+            <CardDescription className="font-medium text-slate-500">
               Total weight lifted across all exercises this week.
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyVolume ?? []}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}`}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}
-                    itemStyle={{ color: 'var(--foreground)' }}
-                    cursor={{ fill: 'var(--muted)' }}
-                  />
-                  <Bar dataKey="volume" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {!hasData ? (
+              <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 m-4">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4">
+                  <TrendingUp className="h-6 w-6 text-slate-300" />
+                </div>
+                <p className="text-sm font-bold text-slate-400">No volume data yet.</p>
+                <p className="text-xs text-slate-400 mt-1">Complete your first workout to see trends.</p>
+              </div>
+            ) : (
+              <div className="h-[300px] w-full pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyVolume ?? []}>
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      fontWeight={600}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      fontWeight={600}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#f8fafc', radius: 8 }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl border-none text-xs font-bold">
+                              {payload[0].value?.toLocaleString()} kg
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="volume" fill="#FF6B00" radius={[8, 8, 8, 8]} barSize={32} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-white via-orange-50 to-amber-50">
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] overflow-hidden text-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-orange-500" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Sparkles className="h-5 w-5" />
               Weekly Wins
             </CardTitle>
-            <CardDescription>Micro milestones that keep you moving.</CardDescription>
+            <CardDescription className="text-orange-100 font-medium">Micro milestones that keep you moving.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4" />
+          <CardContent className="space-y-6">
+            <div className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/10">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">Progressive overload</p>
-                <p className="text-xs text-slate-500">{stats?.weeklyVolume ? 'Volume is trending upward.' : 'Log a workout to unlock trends.'}</p>
+                <p className="text-sm font-bold">Progressive overload</p>
+                <p className="text-xs text-orange-100 mt-0.5">{stats?.weeklyVolume ? 'Volume is trending upward.' : 'Log a workout to unlock trends.'}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
-                <Trophy className="h-4 w-4" />
+            <div className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/10">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <Trophy className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">Consistency badge</p>
-                <p className="text-xs text-slate-500">{stats?.streak ? `You're on a ${stats.streak}-day streak.` : 'Your first streak starts today.'}</p>
+                <p className="text-sm font-bold">Consistency badge</p>
+                <p className="text-xs text-orange-100 mt-0.5">{stats?.streak ? `You're on a ${stats.streak}-day streak.` : 'Your first streak starts today.'}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <CalendarDays className="h-4 w-4" />
+            <div className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/10">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <CalendarDays className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">Show up score</p>
-                <p className="text-xs text-slate-500">{stats?.weeklyWorkouts ? `You've trained ${stats.weeklyWorkouts} days this week.` : 'Plan your first session to earn this.'}</p>
+                <p className="text-sm font-bold">Show up score</p>
+                <p className="text-xs text-orange-100 mt-0.5">{stats?.weeklyWorkouts ? `You've trained ${stats.weeklyWorkouts} days this week.` : 'Plan your first session to earn this.'}</p>
               </div>
             </div>
           </CardContent>
@@ -205,45 +248,95 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-        <Card>
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
           <CardHeader>
-            <CardTitle>Progressive Overload</CardTitle>
-            <CardDescription>Track strength over time for a single lift.</CardDescription>
+            <CardTitle className="text-xl font-bold text-slate-900">Progressive Overload</CardTitle>
+            <CardDescription className="font-medium text-slate-500">Track strength over time for a single lift.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <select
               value={selectedExercise ?? ''}
               onChange={(event) => setSelectedExercise(event.target.value || undefined)}
-              className="w-full h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-200"
+              className="w-full h-14 rounded-2xl border border-slate-100 bg-slate-50 px-5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all appearance-none cursor-pointer"
             >
-              <option value="">Select exercise</option>
+              <option value="">Select exercise to analyze</option>
               {exerciseOptions.map((exercise) => (
                 <option key={exercise} value={exercise}>
                   {exercise}
                 </option>
               ))}
             </select>
-            <div className="h-[240px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={exerciseProgress ?? []}>
-                  <XAxis dataKey="date" hide />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}
-                    itemStyle={{ color: 'var(--foreground)' }}
-                  />
-                  <Line type="monotone" dataKey="weight" stroke="var(--primary)" strokeWidth={3} dot={false} />
-                  <Line type="monotone" dataKey="volume" stroke="#22c55e" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            
+            {!selectedExercise ? (
+              <div className="h-[240px] flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                <TrendingUp className="h-8 w-8 text-slate-300 mb-3" />
+                <p className="text-xs font-bold text-slate-400">Select an exercise to see your strength curve.</p>
+              </div>
+            ) : exerciseProgress && exerciseProgress.length === 0 ? (
+              <div className="h-[240px] flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                <p className="text-xs font-bold text-slate-400">No logs found for this exercise yet.</p>
+              </div>
+            ) : (
+              <div className="h-[240px] pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={exerciseProgress ?? []}>
+                    <XAxis dataKey="date" hide />
+                    <YAxis 
+                      stroke="#94a3b8" 
+                      fontSize={11} 
+                      fontWeight={600} 
+                      tickLine={false} 
+                      axisLine={false} 
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{payload[0].payload.date}</p>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                  <p className="text-xs font-bold text-slate-900">{payload[0].value} kg</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                  <p className="text-xs font-bold text-slate-600">{payload[1].value} vol</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="weight" 
+                      stroke="#FF6B00" 
+                      strokeWidth={4} 
+                      dot={{ r: 4, fill: '#FF6B00', strokeWidth: 2, stroke: '#fff' }} 
+                      activeDot={{ r: 6, strokeWidth: 0 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="volume" 
+                      stroke="#10b981" 
+                      strokeWidth={2} 
+                      strokeDasharray="5 5"
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
           <CardHeader>
-            <CardTitle>Consistency Map</CardTitle>
-            <CardDescription>Every block is a workout day.</CardDescription>
+            <CardTitle className="text-xl font-bold text-slate-900">Consistency Map</CardTitle>
+            <CardDescription className="font-medium text-slate-500">Every block is a workout day.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-7 gap-2">
@@ -251,17 +344,27 @@ export default function AnalyticsPage() {
                 <div
                   key={day.date}
                   title={`${day.date}: ${day.workouts} workouts`}
-                  className={`h-6 rounded-lg ${
+                  className={`aspect-square rounded-lg transition-all duration-300 ${
                     day.workouts === 0
-                      ? 'bg-slate-100'
+                      ? 'bg-slate-100 hover:bg-slate-200'
                       : day.workouts === 1
-                        ? 'bg-orange-200'
+                        ? 'bg-orange-200 hover:bg-orange-300'
                         : day.workouts === 2
-                          ? 'bg-orange-400'
-                          : 'bg-orange-500'
+                          ? 'bg-orange-400 hover:bg-orange-500'
+                          : 'bg-orange-600 hover:bg-orange-700'
                   }`}
                 />
               ))}
+            </div>
+            <div className="mt-6 flex items-center justify-between">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Less</p>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-slate-100" />
+                <div className="w-3 h-3 rounded-sm bg-orange-200" />
+                <div className="w-3 h-3 rounded-sm bg-orange-400" />
+                <div className="w-3 h-3 rounded-sm bg-orange-600" />
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">More</p>
             </div>
           </CardContent>
         </Card>

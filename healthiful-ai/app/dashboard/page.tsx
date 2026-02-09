@@ -119,9 +119,9 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-30 pt-8 pb-4 px-6 bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-slate-100">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <p className="text-slate-500 text-sm font-medium">
+            <div className="text-slate-500 text-sm font-medium">
               Hello, {user ? user.name : <Skeleton className="h-3 w-16 inline-block" />}
-            </p>
+            </div>
             <h1 className="text-2xl font-bold tracking-tight">Ready to Workout</h1>
           </div>
           <button className="p-2 rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 transition">
