@@ -140,8 +140,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
   return (
     <div className={cn(
-      "bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-4 transition-all duration-500",
-      isExpanded && "shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-orange-100"
+      "bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 mb-4 transition-all duration-500 relative",
+      isExpanded && "shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-orange-100",
+      (showDetailPopup || showQuestionPopup || selectedImage) && "z-[100]"
     )}>
       <div 
         className="flex gap-4 items-center cursor-pointer"
@@ -228,11 +229,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           >
             <div className="mt-5 pt-5 border-t border-slate-100 space-y-5">
               {exercise.tip && (
-                <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 border border-slate-100">
-                  <Info size={18} className="text-[#FF6B00] shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    <span className="font-bold text-slate-900">Coach's Tip:</span> {exercise.tip}
-                  </p>
+                <div className="bg-orange-50/50 rounded-2xl p-4 flex gap-4 border border-orange-100/50 items-start">
+                  <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center text-[#FF6B00] shrink-0 mt-0.5">
+                    <Info size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-orange-900 uppercase tracking-widest mb-1">Coach's Tip</p>
+                    <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                      {exercise.tip}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -301,18 +307,18 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             >
               <button 
                 onClick={() => setShowDetailPopup(false)}
-                className="absolute top-5 right-5 sm:top-8 sm:right-8 text-slate-400 hover:text-slate-600 transition-colors z-10 p-1 bg-white/80 rounded-full backdrop-blur-sm"
+                className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors z-[160] p-2 bg-slate-50 rounded-full hover:bg-slate-100"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
 
-              <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-[#FF6B00] shrink-0">
-                  <span className="material-icons-round text-2xl sm:text-3xl">analytics</span>
+              <div className="flex items-center gap-4 mb-8 pr-12">
+                <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-[#FF6B00] shrink-0">
+                  <span className="material-icons-round text-3xl">analytics</span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-bold text-xl sm:text-2xl text-slate-900 truncate">Detailed Analysis</h4>
-                  <p className="text-slate-500 font-medium text-sm sm:text-base truncate">{exercise.name}</p>
+                  <h4 className="font-bold text-2xl text-slate-900 leading-tight">Detailed Analysis</h4>
+                  <p className="text-slate-500 font-medium truncate">{exercise.name}</p>
                 </div>
               </div>
 
@@ -366,29 +372,30 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
                     <div className="space-y-5 sm:space-y-6">
                       <section>
-                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                           Key Benefits
                         </h4>
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                           {exerciseDetails.benefits.map((benefit: string, i: number) => (
-                            <li key={i} className="flex gap-2.5 items-start text-xs sm:text-sm text-slate-600 font-medium bg-green-50/50 p-3 rounded-xl border border-green-100/50">
-                              <Check size={14} className="text-green-500 shrink-0 mt-0.5" />
-                              {benefit}
+                            <li key={i} className="flex gap-3 items-start text-xs sm:text-sm text-slate-600 font-medium bg-green-50/30 p-3 rounded-xl border border-green-100/50">
+                              <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
+                              <span className="leading-relaxed">{benefit}</span>
                             </li>
                           ))}
                         </ul>
                       </section>
 
                       <section>
-                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                           Coach Form Tips
                         </h4>
-                        <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                        <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3">
                           {exerciseDetails.formTips.map((tip: string, i: number) => (
-                            <p key={i} className="text-xs sm:text-sm text-purple-700 font-medium mb-1.5 last:mb-0 flex gap-2">
-                              <span className="text-purple-400">•</span> {tip}
+                            <p key={i} className="text-xs sm:text-sm text-purple-700 font-medium leading-relaxed flex gap-3">
+                              <span className="text-purple-400 shrink-0">•</span> 
+                              <span>{tip}</span>
                             </p>
                           ))}
                         </div>

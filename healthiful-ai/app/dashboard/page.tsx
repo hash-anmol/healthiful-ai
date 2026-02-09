@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-[#F8FAFC] text-[#1E293B] font-sans antialiased min-h-screen pb-24 relative overflow-x-hidden">
-      <header className="sticky top-0 z-30 pt-12 pb-4 px-6 bg-[#F8FAFC]/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 pt-8 pb-4 px-6 bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-slate-100">
         <div className="flex justify-between items-center mb-6">
           <div>
             <p className="text-slate-500 text-sm font-medium">
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="px-6 space-y-6">
+      <main className="px-6 space-y-6 pt-4">
 
         {/* Horizontal Calendar */}
         <div className="flex space-x-3 overflow-x-auto hide-scrollbar py-2">
