@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Features
+
+- **Authorization**: Secure user accounts and sessions.
+- **Gamification**: Earn coins and unlock achievements through workouts.
+- **AI-Powered**: Personalized health and fitness recommendations.
+
 ## Getting Started
 
 First, run the development server:
