@@ -1,7 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getServerAuthContext } from "@/lib/auth/server";
 
-export default function Home() {
+export default async function Home() {
+  const { session, profile } = await getServerAuthContext();
+  if (session && profile) {
+    redirect("/dashboard");
+  }
+  if (session && !profile) {
+    redirect("/onboarding");
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-[var(--background)] font-sans">
       <div className="max-w-sm w-full space-y-12">
@@ -16,9 +26,9 @@ export default function Home() {
         
         <div className="relative group">
           <div className="absolute -inset-1 bg-[var(--primary)] rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-          <Link href="/onboarding" className="relative block">
+          <Link href="/login" className="relative block">
             <Button size="lg" className="w-full text-xl h-16 font-bold rounded-2xl bg-[var(--primary)] text-white shadow-xl hover:bg-[var(--primary-dark)] active:scale-[0.98] transition-all">
-              Start Journey
+              Continue
             </Button>
           </Link>
         </div>

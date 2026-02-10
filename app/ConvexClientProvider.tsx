@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
@@ -26,5 +27,9 @@ export default function ConvexClientProvider({
 
   const convex = new ConvexReactClient(convexUrl);
 
-  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+  return (
+    <ConvexProvider client={convex}>
+      <AuthProvider>{children}</AuthProvider>
+    </ConvexProvider>
+  );
 }

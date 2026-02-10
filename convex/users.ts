@@ -2,9 +2,14 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getMe = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("users").first();
+  args: {
+    authUserId: v.id("authUsers"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .withIndex("by_auth_user_id", (q) => q.eq("authUserId", args.authUserId))
+      .first();
   },
 });
 
@@ -43,6 +48,7 @@ export const createProfile = mutation({
     name: v.optional(v.string()),
     email: v.optional(v.string()),
     clerkId: v.optional(v.string()), // If using Clerk
+    authUserId: v.id("authUsers"),
   },
   handler: async (ctx, args) => {
     // Check if user already exists based on clerkId or email if provided
@@ -54,6 +60,14 @@ export const createProfile = mutation({
         .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
         .first();
       existingUserId = existingUser?._id;
+    }
+
+    if (!existingUserId) {
+      const existingByAuthId = await ctx.db
+        .query("users")
+        .withIndex("by_auth_user_id", (q) => q.eq("authUserId", args.authUserId))
+        .first();
+      existingUserId = existingByAuthId?._id;
     }
 
     if (existingUserId) {
@@ -71,7 +85,7 @@ export const createProfile = mutation({
         additionalObjectives: args.additionalObjectives ?? [],
         bodyType: args.bodyType ?? "",
         workoutRoutine: args.workoutRoutine ?? "",
-      } as any);
+      });
     }
   },
 });

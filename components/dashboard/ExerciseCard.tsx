@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, HelpCircle, Check, Info, RefreshCcw, X } from 'lucide-react';
+import { ChevronDown, HelpCircle, Check, Info, RefreshCcw, X, Play, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAction, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ActiveExerciseTracker } from './ActiveExerciseTracker';
 
 interface ExerciseCardProps {
   exercise: {
@@ -30,6 +31,7 @@ interface ExerciseCardProps {
     weightUsed: number;
     rpe?: number;
   }) => void;
+  onCoinsEarned?: (amount: number) => void;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({ 
@@ -39,6 +41,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   userId,
   onToggle,
   onLog,
+  onCoinsEarned,
 }) => {
   const parseReps = (value?: string) => {
     if (!value) return 0;
@@ -64,6 +67,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [showDetailPopup, setShowDetailPopup] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
+  const [showActiveTracker, setShowActiveTracker] = useState(false);
   const [setsCompleted, setSetsCompleted] = useState<number>(exercise.sets);
   const [repsCompleted, setRepsCompleted] = useState<number>(() => parseReps(exercise.reps));
   const [weightUsed, setWeightUsed] = useState<number>(() => parseWeight(exercise.weight));
@@ -72,6 +76,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const askQuestion = useAction(api.actions.askExerciseQuestion);
   const suggestAlternative = useAction(api.actions.suggestExerciseAlternative);
   const replaceExerciseMutation = useMutation(api.workouts.replaceExercise);
+  const addFeedbackMutation = useMutation(api.feedbacks.addFeedback);
   const getImagesAction = useAction(api.actions.getExerciseImages);
   const getExerciseDetailsAction = useAction(api.actions.getExerciseDetails);
 
@@ -158,6 +163,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         oldExerciseName: exercise.name,
         newExercise: { ...newEx, completed: false }
       });
+      try {
+        await addFeedbackMutation({
+          userId,
+          exerciseName: exercise.name,
+          feedback: question,
+        });
+      } catch (err) {
+        console.error("Failed to save feedback", err);
+      }
       setShowQuestionPopup(false);
       setQuestion('');
       setAnswer('');
@@ -175,23 +189,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       (showDetailPopup || showQuestionPopup || selectedImage) && "z-[100]"
     )}>
       <div 
-        className="flex gap-4 items-center cursor-pointer"
+        className="flex gap-3 items-center cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
+          {/* Left: completed check / circle indicator */}
           <button 
             onClick={(e) => {
               e.stopPropagation();
               if (exercise.completed) {
                 onToggle();
-              } else {
-                setShowLogModal(true);
               }
             }}
             className={cn(
-            "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 relative group shrink-0",
+            "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative group shrink-0",
             exercise.completed 
-              ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] shadow-[0_10px_20px_-5px_rgba(255,107,0,0.4)]" 
-              : "bg-slate-50 hover:bg-orange-50 border border-slate-100"
+              ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] shadow-[0_10px_20px_-5px_rgba(255,107,0,0.4)] cursor-pointer" 
+              : "bg-slate-50 border border-slate-100 cursor-default"
           )}
         >
           <AnimatePresence mode="wait">
@@ -203,7 +216,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 exit={{ scale: 0, rotate: 45 }} 
                 className="text-white"
               >
-                <Check className="w-6 h-6 sm:w-8 sm:h-8" strokeWidth={3.5} />
+                <Check className="w-5 h-5 sm:w-7 sm:h-7" strokeWidth={3.5} />
               </motion.div>
             ) : (
               <motion.div 
@@ -211,12 +224,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }} 
-                className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-[2.5px] border-slate-300 group-hover:border-[#FF6B00] transition-colors" 
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-[2.5px] border-slate-300 transition-colors" 
               />
             )}
           </AnimatePresence>
         </button>
 
+        {/* Middle: exercise info */}
         <div className="flex-grow min-w-0">
           <div className="flex justify-between items-start gap-2">
             <h3 className={cn(
@@ -250,6 +264,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <span className="bg-slate-50 text-slate-600 px-2 py-1 rounded-lg border border-slate-100 shadow-sm">{exercise.reps} Reps</span>
           </div>
         </div>
+
+        {/* Right: Start button */}
+        {!exercise.completed && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowActiveTracker(true);
+            }}
+            className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF6B00] to-[#FF8C33] text-white text-xs font-extrabold shadow-lg shadow-orange-200/60 active:scale-95 transition-transform uppercase tracking-wider"
+          >
+            <Play size={14} fill="white" />
+            Start
+          </button>
+        )}
+        {exercise.completed && (
+          <div className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-green-50 text-green-600 text-[10px] font-bold border border-green-100">
+            <Coins size={12} />
+            +10
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -572,6 +606,23 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
         )}
       </AnimatePresence>
+      {/* Active Exercise Tracker */}
+      <AnimatePresence>
+        {showActiveTracker && !exercise.completed && (
+          <ActiveExerciseTracker
+            exercise={exercise}
+            coinsReward={10}
+            onComplete={(payload) => {
+              onLog(payload);
+              setShowActiveTracker(false);
+              onCoinsEarned?.(10);
+            }}
+            onClose={() => setShowActiveTracker(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Legacy Log Modal (fallback) */}
       <AnimatePresence>
         {showLogModal && (
           <div 

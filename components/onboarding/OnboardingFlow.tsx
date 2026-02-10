@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useMutation } from "convex/react";
@@ -25,34 +25,67 @@ import { BodyTypeStep } from './steps/BodyTypeStep';
 import { WorkoutRoutineStep } from './steps/WorkoutRoutineStep';
 import { StrengthTestStep } from './steps/StrengthTestStep';
 import { AdditionalObjectivesStep } from './steps/AdditionalObjectivesStep';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 import { NameStep } from './steps/NameStep';
 
+const DRAFT_STORAGE_KEY = "onboarding-draft-v1";
+
+const defaultData = {
+  name: '',
+  age: '',
+  height: '',
+  weight: '',
+  sex: '',
+  trainingExperience: '',
+  trainingFrequency: '',
+  equipmentAccess: '',
+  primaryGoal: '',
+  dietType: '',
+  dailyActivity: '',
+  injuryFlags: [] as string[],
+  goalAggressiveness: '',
+  timelineExpectation: '',
+  recoveryCapacity: '',
+  bodyType: '',
+  workoutRoutine: '',
+  strengthTest: { bicepCurlWeight: 0, pushupsCount: 0 },
+  additionalObjectives: [] as string[],
+};
+
+const getInitialDraft = () => {
+  if (typeof window === "undefined") {
+    return { step: 0, data: defaultData };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) {
+      return { step: 0, data: defaultData };
+    }
+    const parsed = JSON.parse(raw) as {
+      step?: number;
+      data?: Partial<typeof defaultData>;
+    };
+    return {
+      step: typeof parsed.step === "number" ? parsed.step : 0,
+      data: {
+        ...defaultData,
+        ...(parsed.data ?? {}),
+      },
+    };
+  } catch {
+    return { step: 0, data: defaultData };
+  }
+};
+
 export default function OnboardingFlow() {
   const router = useRouter();
+  const { authUser, loading } = useAuth();
   const createProfile = useMutation(api.users.createProfile);
-  const [step, setStep] = useState(0);
-  const [data, setData] = useState({
-    name: '',
-    age: '',
-    height: '',
-    weight: '',
-    sex: '',
-    trainingExperience: '',
-    trainingFrequency: '',
-    equipmentAccess: '',
-    primaryGoal: '',
-    dietType: '',
-    dailyActivity: '',
-    injuryFlags: [] as string[],
-    goalAggressiveness: '',
-    timelineExpectation: '',
-    recoveryCapacity: '',
-    bodyType: '',
-    workoutRoutine: '',
-    strengthTest: { bicepCurlWeight: 0, pushupsCount: 0 },
-    additionalObjectives: [] as string[],
-  });
+  const initialDraft = useMemo(() => getInitialDraft(), []);
+  const [step, setStep] = useState(initialDraft.step);
+  const [data, setData] = useState(initialDraft.data);
 
   const updateData = (newData: Partial<typeof data>) => {
     setData((prev) => ({ ...prev, ...newData }));
@@ -61,10 +94,36 @@ export default function OnboardingFlow() {
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => prev - 1);
 
+  useEffect(() => {
+    if (loading) return;
+    if (!authUser) {
+      router.replace("/login");
+      return;
+    }
+
+  }, [authUser, loading, router]);
+
+  useEffect(() => {
+    if (!authUser) return;
+    window.localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        step,
+        data,
+      })
+    );
+  }, [authUser, step, data]);
+
   const handleFinish = async () => {
+    if (!authUser?._id) {
+      router.replace("/login");
+      return;
+    }
+
     try {
       await createProfile({
         ...data,
+        authUserId: authUser._id,
         name: data.name,
         age: parseInt(data.age) || 0,
         height: parseInt(data.height) || 0,
@@ -74,6 +133,7 @@ export default function OnboardingFlow() {
           pushupsCount: Number(data.strengthTest.pushupsCount),
         }
       });
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
       router.push('/dashboard');
     } catch (error) {
       console.error('Failed to create profile:', error);

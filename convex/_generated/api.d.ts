@@ -10,6 +10,9 @@
 
 import type * as actions from "../actions.js";
 import type * as analytics from "../analytics.js";
+import type * as auth from "../auth.js";
+import type * as feedbacks from "../feedbacks.js";
+import type * as gamification from "../gamification.js";
 import type * as users from "../users.js";
 import type * as workouts from "../workouts.js";
 
@@ -22,6 +25,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   analytics: typeof analytics;
+  auth: typeof auth;
+  feedbacks: typeof feedbacks;
+  gamification: typeof gamification;
   users: typeof users;
   workouts: typeof workouts;
 }>;

@@ -1,18 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExerciseCard } from "@/components/dashboard/ExerciseCard";
-import { MessageSquare, RefreshCcw, Send } from 'lucide-react';
+import { CoinCounter, XpBar, StreakBadge } from "@/components/dashboard/CoinAnimation";
+import { WorkoutCompleteModal } from "@/components/dashboard/WorkoutCompleteModal";
+import { AchievementToast } from "@/components/dashboard/AchievementToast";
+import { RefreshCcw, Send, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 export default function DashboardPage() {
-  const user = useQuery(api.users.getMe);
+  const { authUser } = useAuth();
+  const user = useQuery(
+    api.users.getMe,
+    authUser?._id ? { authUserId: authUser._id } : "skip"
+  );
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [duration, setDuration] = useState(45);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
@@ -20,12 +27,29 @@ export default function DashboardPage() {
   
   const workout = useQuery(api.workouts.getWorkout, user ? { userId: user._id, date: dateStr } : "skip");
   const generateWorkoutAction = useAction(api.actions.generateWorkout);
+  const talkToCoachAction = useAction(api.actions.talkToCoach);
   const saveWorkout = useMutation(api.workouts.saveWorkout);
   const toggleComplete = useMutation(api.workouts.markExerciseComplete);
+
+  // Gamification hooks
+  const gameProfile = useQuery(api.gamification.getGameProfile, user ? { userId: user._id } : "skip");
+  const awardExerciseComplete = useMutation(api.gamification.awardExerciseComplete);
+  const awardWorkoutComplete = useMutation(api.gamification.awardWorkoutComplete);
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [showFeedbackInput, setShowFeedbackInput] = useState(false);
+  const [coachInput, setCoachInput] = useState("");
+  const [coachReply, setCoachReply] = useState<string | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachHasInit, setCoachHasInit] = useState(false);
+
+  // Gamification state
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completionStats, setCompletionStats] = useState<any>(null);
+  const [pendingAchievements, setPendingAchievements] = useState<string[]>([]);
+  const [sessionCoins, setSessionCoins] = useState(0);
+  const [sessionXp, setSessionXp] = useState(0);
 
   const handleGenerate = async () => {
     if (!user) return;
@@ -49,6 +73,8 @@ export default function DashboardPage() {
         });
         setFeedback("");
         setShowFeedbackInput(false);
+        setSessionCoins(0);
+        setSessionXp(0);
       }
     } catch (error) {
       console.error("Generation failed:", error);
@@ -57,28 +83,47 @@ export default function DashboardPage() {
     }
   };
 
-  const maybeCelebrate = (exerciseName: string, completed: boolean) => {
-    if (!workout) return;
+  const checkWorkoutComplete = useCallback(async (exerciseName: string) => {
+    if (!workout || !user?._id) return;
 
-    // Optimistically check if all other exercises are completed
-    const willBeAllCompleted = completed && workout.exercises.every(ex => 
+    const willBeAllCompleted = workout.exercises.every(ex => 
       ex.name === exerciseName ? true : ex.completed
     );
 
     if (willBeAllCompleted) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FF6B00', '#FFBB00', '#22C55E']
-      });
+      try {
+        const result = await awardWorkoutComplete({
+          userId: user._id,
+          date: dateStr,
+        });
+        setSessionCoins((prev) => prev + result.coinsEarned);
+        setSessionXp((prev) => prev + result.xpEarned);
+        setCompletionStats({
+          exerciseCount: workout.exercises.length,
+          totalCoins: sessionCoins + result.coinsEarned,
+          totalXp: sessionXp + result.xpEarned,
+          leveledUp: result.leveledUp,
+          newLevel: result.newLevel,
+          newStreak: result.newStreak,
+          newAchievements: result.newAchievements,
+          workoutTitle: workout.title,
+        });
+
+        if (result.newAchievements.length > 0) {
+          setPendingAchievements((prev) => [...prev, ...result.newAchievements]);
+        }
+
+        // Small delay to let exercise completion animate, then show modal
+        setTimeout(() => setShowCompleteModal(true), 600);
+      } catch (err) {
+        console.error("Workout complete reward failed:", err);
+      }
     }
-  };
+  }, [workout, user?._id, dateStr, awardWorkoutComplete, sessionCoins, sessionXp]);
 
   const handleToggle = async (exerciseName: string, completed: boolean) => {
     if (!workout) return;
     if (!user?._id) return;
-    maybeCelebrate(exerciseName, completed);
 
     await toggleComplete({
       userId: user._id,
@@ -96,7 +141,6 @@ export default function DashboardPage() {
     rpe?: number;
   }) => {
     if (!workout || !user?._id) return;
-    maybeCelebrate(exerciseName, true);
 
     await toggleComplete({
       userId: user._id,
@@ -109,25 +153,118 @@ export default function DashboardPage() {
       weightUsed: payload.weightUsed,
       rpe: payload.rpe,
     });
+
+    // Award coins for exercise completion
+    try {
+      const result = await awardExerciseComplete({
+        userId: user._id,
+        exerciseName,
+        weightUsed: payload.weightUsed,
+        hadRpe: payload.rpe !== undefined,
+      });
+      setSessionCoins((prev) => prev + result.coinsEarned);
+      setSessionXp((prev) => prev + result.xpEarned);
+
+      if (result.newAchievements.length > 0) {
+        setPendingAchievements((prev) => [...prev, ...result.newAchievements]);
+      }
+    } catch (err) {
+      console.error("Exercise reward failed:", err);
+    }
+
+    // Check if workout is now fully complete
+    checkWorkoutComplete(exerciseName);
   };
+
+  const handleCoinsEarned = useCallback((amount: number) => {
+    // visual feedback handled by CoinCounter
+  }, []);
 
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
+  const workoutExercises = workout?.exercises?.map((ex) => ({
+    name: ex.name,
+    sets: ex.sets,
+    reps: ex.reps,
+    type: ex.type,
+  }));
+  const completedCount = workout?.exercises?.filter((ex) => ex.completed).length || 0;
+  const totalCount = workout?.exercises?.length || 0;
+
+  const fetchCoachReply = async (message?: string) => {
+    if (!user?._id) return;
+    setCoachLoading(true);
+    try {
+      const reply = await talkToCoachAction({
+        userId: user._id,
+        date: dateStr,
+        userName: user.name || undefined,
+        workoutTitle: workout?.title || undefined,
+        workoutExercises: workoutExercises,
+        completedCount,
+        totalCount,
+        userMessage: message?.trim() || undefined,
+      });
+      setCoachReply(reply);
+    } catch (error) {
+      console.error("Coach reply failed:", error);
+      setCoachReply("Jack AI is offline for a moment. Try again in a bit.");
+    } finally {
+      setCoachLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setCoachHasInit(false);
+    setCoachReply(null);
+  }, [workout?._id, dateStr]);
+
+  useEffect(() => {
+    // Only auto-init the coach once a workout exists for this day
+    if (!user?._id || coachHasInit || !workout) return;
+    void fetchCoachReply("");
+    setCoachHasInit(true);
+  }, [user?._id, coachHasInit, workout]);
+
+  // Reset session stats when workout changes
+  useEffect(() => {
+    setSessionCoins(0);
+    setSessionXp(0);
+  }, [workout?._id]);
+
   return (
     <div className="bg-[#F8FAFC] text-[#1E293B] font-sans antialiased min-h-screen pb-24 relative overflow-x-hidden">
-      <header className="sticky top-0 z-30 pt-8 pb-4 px-6 bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-slate-100">
-        <div className="flex justify-between items-center mb-6">
+      {/* Achievement Toast */}
+      <AchievementToast
+        achievementIds={pendingAchievements}
+        onDismiss={() => setPendingAchievements([])}
+      />
+
+      <header className="sticky top-0 z-30 pt-6 pb-3 px-6 bg-[#F8FAFC]/80 backdrop-blur-xl border-b border-slate-100">
+        {/* Top row: greeting + gamification stats */}
+        <div className="flex justify-between items-center mb-2">
           <div>
             <div className="text-slate-500 text-sm font-medium">
               Hello, {user ? user.name : <Skeleton className="h-3 w-16 inline-block" />}
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Ready to Workout</h1>
           </div>
-          <button className="p-2 rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 transition">
-            <span className="material-icons-round text-[#FF6B00] text-xl">notifications_none</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <StreakBadge streak={gameProfile?.currentStreak ?? 0} />
+            <CoinCounter coins={gameProfile?.coins ?? 0} />
+          </div>
         </div>
+
+        {/* XP bar */}
+        {gameProfile && (
+          <XpBar
+            xpInCurrentLevel={gameProfile.xpInCurrentLevel}
+            xpToNextLevel={gameProfile.xpToNextLevel}
+            level={gameProfile.level}
+            className="mb-3"
+          />
+        )}
         
         <div className="flex items-end justify-between mb-2">
           <div>
@@ -233,7 +370,7 @@ export default function DashboardPage() {
                   : "bg-white text-slate-600 border-slate-100"
               )}
             >
-              <MessageSquare className="w-6 h-6" />
+              <span className="material-icons-round text-2xl">tune</span>
             </button>
           </div>
 
@@ -270,12 +407,114 @@ export default function DashboardPage() {
         {/* Today's Routine */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-slate-900">Today's Routine</h2>
+            <h2 className="text-xl font-bold text-slate-900">Today&apos;s Routine</h2>
             <span className="text-sm text-[#FF6B00] font-semibold">
               {workout ? `${workout.exercises.length} Exercises` : "0 Exercises"}
             </span>
           </div>
 
+          {/* AI Coach Card */}
+          <div className="relative overflow-hidden rounded-[28px] border border-orange-100 bg-white shadow-[0_18px_40px_rgba(255,107,0,0.12)] mb-5">
+            <div className="absolute -top-24 -right-16 h-48 w-48 rounded-full bg-orange-100/60 blur-3xl" />
+            <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-[#FFD4B8]/70 blur-3xl" />
+            <div className="relative p-5 sm:p-6 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.35em] text-orange-400">
+                    Jack AI
+                  </p>
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 mt-2">
+                    Today&apos;s focus, personalized
+                  </h3>
+                </div>
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#FFB347] text-white flex items-center justify-center shadow-lg shadow-orange-200">
+                  <span className="material-icons-round text-xl">bolt</span>
+                </div>
+              </div>
+
+              <div className="min-h-[72px] rounded-2xl bg-orange-50/60 border border-orange-100/80 p-4 text-sm text-slate-700 leading-relaxed">
+                {coachLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-4/5" />
+                    <Skeleton className="h-4 w-3/5" />
+                  </div>
+                ) : coachReply ? (
+                  <p>{coachReply}</p>
+                ) : (
+                  <p>Jack AI is warming up. Give it a second.</p>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={coachInput}
+                  onChange={(event) => setCoachInput(event.target.value)}
+                  placeholder="Ask Jack about form, volume, or modifications"
+                  className="flex-1 h-12 rounded-2xl border border-orange-100 bg-white px-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      fetchCoachReply(coachInput);
+                      setCoachInput('');
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    fetchCoachReply(coachInput);
+                    setCoachInput('');
+                  }}
+                  disabled={!coachInput.trim() || coachLoading}
+                  className="h-12 px-5 rounded-2xl bg-slate-900 text-white text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+                >
+                  <Send className={cn("w-4 h-4", coachLoading && "animate-pulse")} />
+                  Talk
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Workout Progress Bar */}
+          {workout && totalCount > 0 && (
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm mb-5">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-500">Progress</span>
+                  <span className="text-xs font-extrabold text-slate-900">{completedCount}/{totalCount}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100">
+                  <Coins size={10} />
+                  ~{totalCount * 10 + 50} coins possible
+                </div>
+              </div>
+              <div className="flex gap-1">
+                {workout.exercises.map((ex, i) => (
+                  <motion.div
+                    key={i}
+                    className={cn(
+                      "flex-1 h-3 rounded-full transition-all duration-500",
+                      ex.completed 
+                        ? "bg-gradient-to-r from-[#FF6B00] to-[#FF8C33]" 
+                        : "bg-slate-100"
+                    )}
+                    animate={ex.completed ? { scale: [1, 1.2, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                  />
+                ))}
+              </div>
+              {completedCount === totalCount && totalCount > 0 && (
+                <motion.p
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs font-bold text-green-600 mt-2 text-center"
+                >
+                  All exercises complete! Great work!
+                </motion.p>
+              )}
+            </div>
+          )}
+
+          {/* Exercise Cards */}
           <div className="space-y-4">
             {isGenerating ? (
               <WorkoutSkeleton />
@@ -289,6 +528,7 @@ export default function DashboardPage() {
                   userId={user?._id}
                   onToggle={() => handleToggle(exercise.name, !exercise.completed)}
                   onLog={(payload) => handleLogAndToggle(exercise.name, payload)}
+                  onCoinsEarned={handleCoinsEarned}
                 />
               ))
             ) : (
@@ -299,6 +539,18 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Workout Complete Modal */}
+      {completionStats && (
+        <WorkoutCompleteModal
+          show={showCompleteModal}
+          onClose={() => {
+            setShowCompleteModal(false);
+            setCompletionStats(null);
+          }}
+          stats={completionStats}
+        />
+      )}
 
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
       <style jsx>{`

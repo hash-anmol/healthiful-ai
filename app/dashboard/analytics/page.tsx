@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Trophy, Flame, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
 import { format, startOfWeek, subWeeks, endOfWeek, subDays } from 'date-fns';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const toISODate = (date: Date) => format(date, 'yyyy-MM-dd');
 
@@ -22,7 +23,11 @@ const renderDelta = (current: number, previous: number, suffix = '') => {
 };
 
 export default function AnalyticsPage() {
-  const user = useQuery(api.users.getMe);
+  const { authUser } = useAuth();
+  const user = useQuery(
+    api.users.getMe,
+    authUser?._id ? { authUserId: authUser._id } : 'skip'
+  );
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
