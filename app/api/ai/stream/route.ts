@@ -22,13 +22,13 @@ const getVertexAccessToken = async () => {
     scopes: [CLOUD_PLATFORM_SCOPE],
   });
   const client = await auth.getClient();
-  const token = await client.getAccessToken();
+  const response = await client.getAccessToken();
 
-  if (!token) {
+  if (!response.token) {
     throw new Error("Could not acquire Google Cloud access token");
   }
 
-  return token;
+  return response.token;
 };
 
 export async function POST(req: Request) {
