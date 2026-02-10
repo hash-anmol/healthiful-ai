@@ -6,7 +6,7 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Trophy, Flame, CalendarDays, TrendingUp, Sparkles } from 'lucide-react';
+import { Trophy, Flame, CalendarDays, TrendingUp, Sparkles, Scale } from 'lucide-react';
 import { format, startOfWeek, subWeeks, endOfWeek, subDays } from 'date-fns';
 import { useAuth } from '@/components/auth/AuthProvider';
 
@@ -39,12 +39,12 @@ export default function AnalyticsPage() {
     api.analytics.getDashboardStats,
     user
       ? {
-          userId: user._id,
-          startDate: toISODate(weekStart),
-          endDate: toISODate(weekEnd),
-          previousStartDate: toISODate(prevWeekStart),
-          previousEndDate: toISODate(prevWeekEnd),
-        }
+        userId: user._id,
+        startDate: toISODate(weekStart),
+        endDate: toISODate(weekEnd),
+        previousStartDate: toISODate(prevWeekStart),
+        previousEndDate: toISODate(prevWeekEnd),
+      }
       : 'skip'
   );
 
@@ -70,17 +70,52 @@ export default function AnalyticsPage() {
     api.analytics.getWorkoutHeatmap,
     user
       ? {
-          userId: user._id,
-          startDate: toISODate(heatmapStart),
-          endDate: toISODate(today),
-        }
+        userId: user._id,
+        startDate: toISODate(heatmapStart),
+        endDate: toISODate(today),
+      }
       : 'skip'
+  );
+
+  const weightHistory = useQuery(
+    api.weightLogs.getWeightHistory,
+    user ? { userId: user._id, days: 90 } : 'skip'
   );
 
   const exerciseOptions = useMemo(() => {
     if (!exerciseCatalog) return [];
     return exerciseCatalog;
   }, [exerciseCatalog]);
+
+  // Weight commentary based on body type and goal
+  const weightCommentary = useMemo(() => {
+    if (!weightHistory || weightHistory.length < 2 || !user) return null;
+    const first = weightHistory[0].weight;
+    const last = weightHistory[weightHistory.length - 1].weight;
+    const diff = last - first;
+    const diffStr = Math.abs(diff).toFixed(1);
+    const bodyType = user.bodyType?.toLowerCase() ?? '';
+    const goal = user.primaryGoal?.toLowerCase() ?? '';
+
+    if (diff > 0) {
+      if (bodyType.includes('ecto') || goal.includes('muscle') || goal.includes('gain') || goal.includes('bulk')) {
+        return `Up ${diffStr} kg — great work building mass. Your consistency is paying off.`;
+      }
+      if (goal.includes('lose') || goal.includes('cut') || goal.includes('weight loss')) {
+        return `Up ${diffStr} kg recently. Stay focused on your deficit — small fluctuations are normal.`;
+      }
+      return `Up ${diffStr} kg over this period.`;
+    } else if (diff < 0) {
+      if (goal.includes('lose') || goal.includes('cut') || goal.includes('weight loss')) {
+        return `Down ${diffStr} kg — your consistency is paying off. Keep pushing.`;
+      }
+      if (bodyType.includes('ecto') || goal.includes('muscle') || goal.includes('gain') || goal.includes('bulk')) {
+        return `Down ${diffStr} kg — consider increasing your calorie surplus to support muscle gain.`;
+      }
+      return `Down ${diffStr} kg over this period.`;
+    }
+    return 'Weight is holding steady. Keep up the good work.';
+  }, [weightHistory, user]);
 
   const encouragement = stats?.encouragement ?? 'Log a workout and watch your progress build.';
 
@@ -212,45 +247,122 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] overflow-hidden text-white">
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Sparkles className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+              <span className="text-xl">🤖</span>
               Weekly Wins
             </CardTitle>
-            <CardDescription className="text-orange-100 font-medium">Micro milestones that keep you moving.</CardDescription>
+            <CardDescription className="text-slate-500 font-medium">Micro milestones that keep you moving.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/10">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-5 w-5 text-white" />
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-4 p-4 bg-orange-50/60 rounded-3xl border border-orange-100/60">
+              <div className="w-10 h-10 rounded-2xl bg-orange-100 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-5 w-5 text-[#FF6B00]" />
               </div>
               <div>
-                <p className="text-sm font-bold">Progressive overload</p>
-                <p className="text-xs text-orange-100 mt-0.5">{stats?.weeklyVolume ? 'Volume is trending upward.' : 'Log a workout to unlock trends.'}</p>
+                <p className="text-sm font-bold text-slate-900">Progressive overload</p>
+                <p className="text-xs text-slate-500 mt-0.5">{stats?.weeklyVolume ? 'Volume is trending upward.' : 'Log a workout to unlock trends.'}</p>
               </div>
             </div>
-            <div className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/10">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                <Trophy className="h-5 w-5 text-white" />
+            <div className="flex items-start gap-4 p-4 bg-green-50/60 rounded-3xl border border-green-100/60">
+              <div className="w-10 h-10 rounded-2xl bg-green-100 flex items-center justify-center shrink-0">
+                <Trophy className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-bold">Consistency badge</p>
-                <p className="text-xs text-orange-100 mt-0.5">{stats?.streak ? `You're on a ${stats.streak}-day streak.` : 'Your first streak starts today.'}</p>
+                <p className="text-sm font-bold text-slate-900">Consistency badge</p>
+                <p className="text-xs text-slate-500 mt-0.5">{stats?.streak ? `You're on a ${stats.streak}-day streak.` : 'Your first streak starts today.'}</p>
               </div>
             </div>
-            <div className="flex items-start gap-4 p-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/10">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                <CalendarDays className="h-5 w-5 text-white" />
+            <div className="flex items-start gap-4 p-4 bg-blue-50/60 rounded-3xl border border-blue-100/60">
+              <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center shrink-0">
+                <CalendarDays className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-bold">Show up score</p>
-                <p className="text-xs text-orange-100 mt-0.5">{stats?.weeklyWorkouts ? `You've trained ${stats.weeklyWorkouts} days this week.` : 'Plan your first session to earn this.'}</p>
+                <p className="text-sm font-bold text-slate-900">Show up score</p>
+                <p className="text-xs text-slate-500 mt-0.5">{stats?.weeklyWorkouts ? `You've trained ${stats.weeklyWorkouts} days this week.` : 'Plan your first session to earn this.'}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Weight Progress */}
+      <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+            <Scale className="h-5 w-5 text-[#FF6B00]" />
+            Weight Progress
+          </CardTitle>
+          <CardDescription className="font-medium text-slate-500">
+            Your body weight over the last 90 days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!weightHistory || weightHistory.length === 0 ? (
+            <div className="h-[220px] flex flex-col items-center justify-center text-center p-6 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+              <Scale className="h-8 w-8 text-slate-300 mb-3" />
+              <p className="text-sm font-bold text-slate-400">No weight data yet.</p>
+              <p className="text-xs text-slate-400 mt-1">Log your weight from the Profile page to see trends.</p>
+            </div>
+          ) : (
+            <>
+              <div className="h-[220px] pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weightHistory.map((w: any) => ({ date: w.date, weight: w.weight }))}>
+                    <XAxis
+                      dataKey="date"
+                      stroke="#94a3b8"
+                      fontSize={10}
+                      fontWeight={600}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v: string) => {
+                        const d = new Date(v);
+                        return format(d, 'MMM d');
+                      }}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      fontWeight={600}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={['auto', 'auto']}
+                      tickFormatter={(v: number) => `${v}`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl text-xs font-bold">
+                              {payload[0].payload.date}: {payload[0].value} kg
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#FF6B00"
+                      strokeWidth={3}
+                      dot={{ r: 3, fill: '#FF6B00', strokeWidth: 2, stroke: '#fff' }}
+                      activeDot={{ r: 5, strokeWidth: 0 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              {weightCommentary && (
+                <p className="mt-4 text-sm text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  {weightCommentary}
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
@@ -271,7 +383,7 @@ export default function AnalyticsPage() {
                 </option>
               ))}
             </select>
-            
+
             {!selectedExercise ? (
               <div className="h-[240px] flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
                 <TrendingUp className="h-8 w-8 text-slate-300 mb-3" />
@@ -286,12 +398,12 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={exerciseProgress ?? []}>
                     <XAxis dataKey="date" hide />
-                    <YAxis 
-                      stroke="#94a3b8" 
-                      fontSize={11} 
-                      fontWeight={600} 
-                      tickLine={false} 
-                      axisLine={false} 
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      fontWeight={600}
+                      tickLine={false}
+                      axisLine={false}
                     />
                     <Tooltip
                       content={({ active, payload }) => {
@@ -315,19 +427,19 @@ export default function AnalyticsPage() {
                         return null;
                       }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="weight" 
-                      stroke="#FF6B00" 
-                      strokeWidth={4} 
-                      dot={{ r: 4, fill: '#FF6B00', strokeWidth: 2, stroke: '#fff' }} 
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#FF6B00"
+                      strokeWidth={4}
+                      dot={{ r: 4, fill: '#FF6B00', strokeWidth: 2, stroke: '#fff' }}
                       activeDot={{ r: 6, strokeWidth: 0 }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="volume" 
-                      stroke="#10b981" 
-                      strokeWidth={2} 
+                    <Line
+                      type="monotone"
+                      dataKey="volume"
+                      stroke="#10b981"
+                      strokeWidth={2}
                       strokeDasharray="5 5"
                       dot={false}
                     />
@@ -349,15 +461,14 @@ export default function AnalyticsPage() {
                 <div
                   key={day.date}
                   title={`${day.date}: ${day.workouts} workouts`}
-                  className={`aspect-square rounded-lg transition-all duration-300 ${
-                    day.workouts === 0
+                  className={`aspect-square rounded-lg transition-all duration-300 ${day.workouts === 0
                       ? 'bg-slate-100 hover:bg-slate-200'
                       : day.workouts === 1
                         ? 'bg-orange-200 hover:bg-orange-300'
                         : day.workouts === 2
                           ? 'bg-orange-400 hover:bg-orange-500'
                           : 'bg-orange-600 hover:bg-orange-700'
-                  }`}
+                    }`}
                 />
               ))}
             </div>

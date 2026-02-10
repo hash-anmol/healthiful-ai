@@ -10,6 +10,12 @@ interface SetData {
   completed: boolean;
 }
 
+export interface ActiveExerciseSessionState {
+  sets: SetData[];
+  elapsedSeconds: number;
+  activeSetIndex: number;
+}
+
 interface ActiveExerciseTrackerProps {
   exercise: {
     name: string;
@@ -27,6 +33,8 @@ interface ActiveExerciseTrackerProps {
   }) => void;
   onClose: () => void;
   coinsReward?: number;
+  initialSession?: ActiveExerciseSessionState | null;
+  onSessionChange?: (session: ActiveExerciseSessionState) => void;
 }
 
 const getDefaultRestDuration = (type?: string): number => {
@@ -56,21 +64,25 @@ export const ActiveExerciseTracker: React.FC<ActiveExerciseTrackerProps> = ({
   onComplete,
   onClose,
   coinsReward = 10,
+  initialSession,
+  onSessionChange,
 }) => {
   const defaultReps = parseReps(exercise.reps);
   const defaultWeight = parseWeight(exercise.weight);
   const restDuration = getDefaultRestDuration(exercise.type);
 
-  const [sets, setSets] = useState<SetData[]>(() =>
-    Array.from({ length: exercise.sets }, () => ({
-      reps: defaultReps,
-      weight: defaultWeight,
-      completed: false,
-    }))
-  );
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [sets, setSets] = useState<SetData[]>(() => (
+    initialSession?.sets?.length
+      ? initialSession.sets
+      : Array.from({ length: exercise.sets }, () => ({
+          reps: defaultReps,
+          weight: defaultWeight,
+          completed: false,
+        }))
+  ));
+  const [elapsedSeconds, setElapsedSeconds] = useState(initialSession?.elapsedSeconds ?? 0);
   const [showRestTimer, setShowRestTimer] = useState(false);
-  const [activeSetIndex, setActiveSetIndex] = useState(0);
+  const [activeSetIndex, setActiveSetIndex] = useState(initialSession?.activeSetIndex ?? 0);
   const [editingSet, setEditingSet] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -92,6 +104,15 @@ export const ActiveExerciseTracker: React.FC<ActiveExerciseTrackerProps> = ({
 
   const completedCount = sets.filter((s) => s.completed).length;
   const allCompleted = completedCount === sets.length;
+
+  useEffect(() => {
+    if (!onSessionChange) return;
+    onSessionChange({
+      sets,
+      elapsedSeconds,
+      activeSetIndex,
+    });
+  }, [sets, elapsedSeconds, activeSetIndex, onSessionChange]);
 
   const handleSetToggle = useCallback((index: number) => {
     setSets((prev) => {
@@ -380,14 +401,14 @@ export const ActiveExerciseTracker: React.FC<ActiveExerciseTrackerProps> = ({
           >
             {allCompleted ? (
               <>
-                Complete
+                Finish Exercise
                 <span className="flex items-center gap-1 text-white/80 text-sm font-medium">
                   <Coins size={14} /> +{coinsReward}
                 </span>
               </>
             ) : completedCount > 0 ? (
               <>
-                Finish ({completedCount}/{sets.length})
+                Finish ({completedCount}/{sets.length} sets)
                 <span className="flex items-center gap-1 text-white/60 text-sm">
                   <Coins size={13} /> +{Math.floor(coinsReward * (completedCount / sets.length))}
                 </span>

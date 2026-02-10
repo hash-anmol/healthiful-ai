@@ -101,6 +101,13 @@ export const markExerciseComplete = mutation({
     const workout = await ctx.db.get(args.workoutId);
     if (!workout) throw new Error("Workout not found");
 
+    const isWorkoutFullyCompleted =
+      workout.exercises.length > 0 && workout.exercises.every((exercise) => exercise.completed);
+    if (isWorkoutFullyCompleted && !args.completed) {
+      // Once a day is fully completed, lock completion state to avoid accidental regression.
+      return;
+    }
+
     const updatedExercises = workout.exercises.map((ex) => {
       if (ex.name === args.exerciseName) {
         return { ...ex, completed: args.completed };

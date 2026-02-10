@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, HelpCircle, Check, Info, RefreshCcw, X, Play, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,7 +7,8 @@ import { api } from '@/convex/_generated/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ActiveExerciseTracker } from './ActiveExerciseTracker';
+import { ActiveExerciseTracker, type ActiveExerciseSessionState } from './ActiveExerciseTracker';
+import { streamAiText } from '@/lib/streamAiText';
 
 interface ExerciseCardProps {
   exercise: {
@@ -65,9 +66,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [exerciseDetails, setExerciseDetails] = useState<any>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [detailsStreamingText, setDetailsStreamingText] = useState('');
   const [showDetailPopup, setShowDetailPopup] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
   const [showActiveTracker, setShowActiveTracker] = useState(false);
+  const [hasStartedExercise, setHasStartedExercise] = useState(false);
+  const [trackerSession, setTrackerSession] = useState<ActiveExerciseSessionState | null>(null);
   const [setsCompleted, setSetsCompleted] = useState<number>(exercise.sets);
   const [repsCompleted, setRepsCompleted] = useState<number>(() => parseReps(exercise.reps));
   const [weightUsed, setWeightUsed] = useState<number>(() => parseWeight(exercise.weight));
@@ -86,13 +90,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     if (isExpanded && images.length === 0) {
       fetchImages();
     }
-  }, [isExpanded]);
+  }, [isExpanded, exercise.name]);
 
+  // Background preload: start fetching details when card expands
   useEffect(() => {
-    if (showDetailPopup && !exerciseDetails) {
+    if (isExpanded && !exerciseDetails && !isLoadingDetails) {
       fetchDetails();
     }
-  }, [showDetailPopup]);
+  }, [isExpanded, exercise.name]);
 
   useEffect(() => {
     setSetsCompleted(exercise.sets);
@@ -100,6 +105,31 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     setWeightUsed(parseWeight(exercise.weight));
     setRpe('');
   }, [exercise.name, exercise.sets, exercise.reps, exercise.weight]);
+
+  // Reset all cached data when exercise changes (e.g. after "Suggest Change")
+  const prevExerciseNameRef = useRef(exercise.name);
+  useEffect(() => {
+    if (prevExerciseNameRef.current !== exercise.name) {
+      prevExerciseNameRef.current = exercise.name;
+      // Reset images, details, and guidance state
+      setImages([]);
+      setExerciseDetails(null);
+      setDetailsStreamingText('');
+      setAnswer('');
+      setQuestion('');
+      setSelectedImage(null);
+      setHasStartedExercise(false);
+      setTrackerSession(null);
+      // Re-fetch images if the card is already expanded
+      if (isExpanded) {
+        fetchImages();
+      }
+      // Re-fetch details if the detail popup is open
+      if (showDetailPopup) {
+        fetchDetails();
+      }
+    }
+  }, [exercise.name]);
 
   const fetchImages = async () => {
     setIsLoadingImages(true);
@@ -115,31 +145,109 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
   const fetchDetails = async () => {
     setIsLoadingDetails(true);
+    setDetailsStreamingText('');
     try {
-      const res = await getExerciseDetailsAction({ exerciseName: exercise.name });
-      setExerciseDetails(res);
+      let streamed = '';
+      await streamAiText({
+        messages: [
+          {
+            role: "system",
+            content: "You are a biomechanics assistant. Output ONLY valid JSON, no markdown fences.",
+          },
+          {
+            role: "user",
+            content: `Provide a detailed analysis of "${exercise.name}" as JSON:
+{
+  "why":"1-2 sentences max on why this exercise is effective",
+  "affectedAreas":["primary muscle groups"],
+  "benefits":["3-4 key benefits"],
+  "formTips":["3-4 form cues"],
+  "howTo":["step 1","step 2","step 3","...up to 6 numbered steps for performing this exercise correctly from setup to finish"]
+}
+No markdown fences and no additional text outside the JSON.`,
+          },
+        ],
+        temperature: 0.3,
+        onChunk: (chunk) => {
+          streamed += chunk;
+          setDetailsStreamingText((prev) => `${prev}${chunk}`);
+        },
+      });
+
+      const jsonString = streamed.replace(/```json/g, "").replace(/```/g, "").trim();
+      setExerciseDetails(JSON.parse(jsonString));
+      setDetailsStreamingText('');
     } catch (err) {
       console.error(err);
+      // Fallback to existing Convex action if streaming parse fails.
+      try {
+        const res = await getExerciseDetailsAction({ exerciseName: exercise.name });
+        setExerciseDetails(res);
+      } catch (fallbackError) {
+        console.error(fallbackError);
+      }
     } finally {
       setIsLoadingDetails(false);
     }
   };
+
+  const handleTrackerSessionChange = useCallback((session: ActiveExerciseSessionState) => {
+    setTrackerSession((prev) => {
+      if (!prev) return session;
+      if (
+        prev.elapsedSeconds === session.elapsedSeconds &&
+        prev.activeSetIndex === session.activeSetIndex &&
+        prev.sets.length === session.sets.length &&
+        prev.sets.every((set, index) => {
+          const nextSet = session.sets[index];
+          return (
+            set.completed === nextSet?.completed &&
+            set.reps === nextSet?.reps &&
+            set.weight === nextSet?.weight
+          );
+        })
+      ) {
+        return prev;
+      }
+      return session;
+    });
+    setHasStartedExercise(session.sets.some((set) => set.completed) || session.elapsedSeconds > 0);
+  }, []);
 
   const handleAsk = async () => {
     if (!question.trim()) return;
     setIsAsking(true);
     setAnswer('');
     try {
-      const res = await askQuestion({
-        userId,
-        exerciseName: exercise.name,
-        workoutTitle,
-        question,
-        exerciseNotes: exercise.notes
+      await streamAiText({
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert trainer. Context: exercise "${exercise.name}" in workout "${workoutTitle}". Be concise and practical.`,
+          },
+          {
+            role: "user",
+            content: question,
+          },
+        ],
+        temperature: 0.4,
+        onChunk: (chunk) => {
+          setAnswer((prev) => `${prev}${chunk}`);
+        },
       });
-      setAnswer(res);
     } catch (err) {
-      setAnswer("Sorry, I couldn't get an answer right now.");
+      try {
+        const res = await askQuestion({
+          userId,
+          exerciseName: exercise.name,
+          workoutTitle,
+          question,
+          exerciseNotes: exercise.notes
+        });
+        setAnswer(res);
+      } catch {
+        setAnswer("Sorry, I couldn't get an answer right now.");
+      }
     } finally {
       setIsAsking(false);
     }
@@ -192,49 +300,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         className="flex gap-3 items-center cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-          {/* Left: completed check / circle indicator */}
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              if (exercise.completed) {
-                onToggle();
-              }
-            }}
-            className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative group shrink-0",
-            exercise.completed 
-              ? "bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] shadow-[0_10px_20px_-5px_rgba(255,107,0,0.4)] cursor-pointer" 
-              : "bg-slate-50 border border-slate-100 cursor-default"
-          )}
-        >
-          <AnimatePresence mode="wait">
-            {exercise.completed ? (
-              <motion.div 
-                key="checked" 
-                initial={{ scale: 0, rotate: -45 }} 
-                animate={{ scale: 1, rotate: 0 }} 
-                exit={{ scale: 0, rotate: 45 }} 
-                className="text-white"
-              >
-                <Check className="w-5 h-5 sm:w-7 sm:h-7" strokeWidth={3.5} />
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="unchecked" 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-[2.5px] border-slate-300 transition-colors" 
-              />
-            )}
-          </AnimatePresence>
-        </button>
-
-        {/* Middle: exercise info */}
+        {/* Exercise info */}
         <div className="flex-grow min-w-0">
           <div className="flex justify-between items-start gap-2">
             <h3 className={cn(
-              "font-extrabold text-lg sm:text-xl leading-tight transition-all duration-500 truncate", 
+              "font-extrabold text-base sm:text-xl leading-tight transition-all duration-500 line-clamp-2", 
               exercise.completed ? "text-slate-400 line-through decoration-2" : "text-slate-900"
             )}>
               {exercise.name}
@@ -243,7 +313,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <button onClick={() => setShowQuestionPopup(true)} className="text-slate-300 hover:text-[#FF6B00] transition-all p-1.5 hover:bg-orange-50 rounded-xl">
                 <HelpCircle size={20} />
               </button>
-              <div className={cn("text-slate-300 transition-all duration-500", isExpanded && "rotate-180 text-orange-500")}>
+              <div 
+                className={cn("text-slate-300 transition-all duration-500 cursor-pointer", isExpanded && "rotate-180 text-orange-500")}
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
                 <ChevronDown size={22} />
               </div>
             </div>
@@ -265,17 +338,23 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
         </div>
 
-        {/* Right: Start button */}
+        {/* Right: Start / Resume button */}
         {!exercise.completed && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowActiveTracker(true);
+              setHasStartedExercise(true);
             }}
-            className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#FF6B00] to-[#FF8C33] text-white text-xs font-extrabold shadow-lg shadow-orange-200/60 active:scale-95 transition-transform uppercase tracking-wider"
+            className={cn(
+              "shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-white text-xs font-extrabold shadow-lg active:scale-95 transition-transform uppercase tracking-wider",
+              hasStartedExercise
+                ? "bg-gradient-to-r from-slate-800 to-slate-700 shadow-slate-200/60"
+                : "bg-gradient-to-r from-[#FF6B00] to-[#FF8C33] shadow-orange-200/60"
+            )}
           >
             <Play size={14} fill="white" />
-            Start
+            {hasStartedExercise ? 'Resume' : 'Start'}
           </button>
         )}
         {exercise.completed && (
@@ -391,13 +470,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </div>
 
               {isLoadingDetails ? (
-                <div className="space-y-6">
-                  <Skeleton className="h-48 w-full rounded-3xl" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Skeleton className="h-32 rounded-2xl" />
-                    <Skeleton className="h-32 rounded-2xl" />
+                detailsStreamingText ? (
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
+                    {detailsStreamingText}
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-6">
+                    <Skeleton className="h-48 w-full rounded-3xl" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Skeleton className="h-32 rounded-2xl" />
+                      <Skeleton className="h-32 rounded-2xl" />
+                    </div>
+                  </div>
+                )
               ) : exerciseDetails ? (
                 <div className="space-y-6 sm:space-y-8">
                   {/* Hero Image in Modal */}
@@ -411,14 +496,32 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                     </div>
                   )}
 
+                  {/* How To — Step-by-step guide */}
+                  {exerciseDetails.howTo?.length > 0 && (
+                    <section>
+                      <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
+                        How To Perform
+                      </h4>
+                      <ol className="space-y-2">
+                        {exerciseDetails.howTo.map((step: string, i: number) => (
+                          <li key={i} className="flex gap-3 items-start text-xs sm:text-sm text-slate-700 font-medium">
+                            <span className="shrink-0 w-6 h-6 rounded-full bg-[#FF6B00]/10 text-[#FF6B00] flex items-center justify-center text-[10px] font-black mt-0.5">{i + 1}</span>
+                            <span className="leading-relaxed">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </section>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                     <div className="space-y-5 sm:space-y-6">
                       <section>
-                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2.5 flex items-center gap-2">
+                        <h4 className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-2 flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                           Why this works
                         </h4>
-                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50 p-3 rounded-2xl border border-slate-100 line-clamp-3">
                           {exerciseDetails.why}
                         </p>
                       </section>
@@ -612,9 +715,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <ActiveExerciseTracker
             exercise={exercise}
             coinsReward={10}
+            initialSession={trackerSession}
+            onSessionChange={handleTrackerSessionChange}
             onComplete={(payload) => {
               onLog(payload);
               setShowActiveTracker(false);
+              setTrackerSession(null);
               onCoinsEarned?.(10);
             }}
             onClose={() => setShowActiveTracker(false)}

@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, User, Settings, LogOut, Plus, Trophy, Flame, Coins, Zap, Star, TrendingUp, Crown, Target, Dumbbell } from 'lucide-react';
+import { Trash2, User, Settings, LogOut, Plus, Trophy, Flame, Coins, Zap, Star, TrendingUp, Crown, Target, Dumbbell, Scale } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -13,6 +13,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { ACHIEVEMENTS, RARITY_COLORS, type AchievementDef } from '@/lib/achievements';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 type FeedbackItem = {
   _id: Id<"feedbacks">;
@@ -54,9 +55,17 @@ export default function ProfilePage() {
 
   const addFeedback = useMutation(api.feedbacks.addFeedback);
   const deleteFeedback = useMutation(api.feedbacks.deleteFeedback);
+  const logWeightMutation = useMutation(api.weightLogs.logWeight);
+  const latestWeight = useQuery(
+    api.weightLogs.getLatestWeight,
+    user?._id ? { userId: user._id } : "skip"
+  );
+
   const [exerciseName, setExerciseName] = useState('');
   const [feedbackText, setFeedbackText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [weightInput, setWeightInput] = useState('');
+  const [isLoggingWeight, setIsLoggingWeight] = useState(false);
 
   const unlockedIds = useMemo(() => {
     return new Set((achievements ?? []).map((a) => a.achievementId));
@@ -84,6 +93,22 @@ export default function ProfilePage() {
       setFeedbackText('');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleLogWeight = async () => {
+    const w = parseFloat(weightInput);
+    if (!user?._id || !w || w <= 0) return;
+    setIsLoggingWeight(true);
+    try {
+      await logWeightMutation({
+        userId: user._id,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        weight: w,
+      });
+      setWeightInput('');
+    } finally {
+      setIsLoggingWeight(false);
     }
   };
 
@@ -168,6 +193,43 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Weight Check-in */}
+      <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2rem] overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+            <Scale size={20} className="text-[#FF6B00]" />
+            Weight Check-in
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {latestWeight && (
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900">{latestWeight.weight}</span>
+              <span className="text-sm font-bold text-slate-400">kg</span>
+              <span className="text-xs text-slate-400 ml-auto">Last logged: {latestWeight.date}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <Input
+              type="number"
+              placeholder="Today's weight (kg)"
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              className="flex-1 h-12 rounded-2xl"
+              step="0.1"
+              min="0"
+            />
+            <Button
+              onClick={handleLogWeight}
+              disabled={!weightInput || isLoggingWeight}
+              className="h-12 px-6 rounded-2xl bg-[#FF6B00] hover:bg-[#E55D00] text-white font-bold"
+            >
+              Log
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Achievements */}
       <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2rem] overflow-hidden">

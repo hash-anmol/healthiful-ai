@@ -107,13 +107,23 @@ export const generateWorkout = action({
       - Weekly push volume must not exceed pull volume.
       - On Push days, bias rear-delts, scapular stability, or light pulling in warm-up or accessories if needed.
 
-      TRAINING SPLIT (PPL x 2): Mon: Push, Tue: Pull, Wed: Legs, Thu: Push, Fri: Pull, Sat: Legs, Sun: Rest.
-      SESSION DURATION: ${args.duration || 45} minutes.
-      Adjust the number of exercises and sets to fit strictly within ${args.duration || 45} minutes, including a 5-7m warm-up.
-      - 20-30 min: 3-4 exercises total.
-      - 45 min: 5-6 exercises total.
-      - 60 min: 7-8 exercises total.
-      
+      TRAINING SPLIT (PPL x 2): Mon: Push, Tue: Pull, Wed: Legs, Thu: Push, Fri: Pull, Sat: Legs, Sun: Rest/Active Recovery.
+      SESSION DURATION: ${args.duration || 45} minutes (strict — the workout MUST fit within this window).
+
+      TITLE FORMAT RULE (STRICT):
+      - Must be EXACTLY: "<Split> — <Focus>"
+      - <Split> must be one of: "Push A", "Pull A", "Legs A", "Push B", "Pull B", "Legs B", "Recovery Day"
+      - <Focus> should reflect the session focus, e.g. "Back & Biceps", "Chest & Shoulders", "Quad Emphasis"
+      - NEVER include prefixes/suffixes such as "Jacked AI:", dates, parentheses, or slogans.
+      - NEVER use generic titles like "45-Minute Muscle Building Workout".
+
+      TIME ESTIMATION RULE (CRITICAL):
+      - For each exercise, internally estimate the time it will take (sets × time-per-set including rest).
+      - Warm-up: 5-7 minutes.
+      - Typical main exercise: ~6-8 min (3 sets with 90s rest), ~8-10 min (4 sets with 90-120s rest).
+      - Keep a running total. Stop adding exercises when the total reaches ${args.duration || 45} minutes.
+      - Do NOT use a fixed exercise count. Let the time budget decide.
+
       Tempo: 3-1-1. Reps: Hypertrophy 6-15.
 
       Weekly Context (Workouts from ${mondayStr} to ${args.date}):
@@ -129,7 +139,7 @@ export const generateWorkout = action({
       Create a structured workout for ${args.date}. Infer type from day.
       Return ONLY JSON:
       {
-        "title": "Workout Title",
+        "title": "Push A — Chest & Shoulders (example, use actual type)",
         "exercises": [{ "name": "...", "sets": 3, "reps": "8-12", "weight": "...", "notes": "...", "type": "warmup"|"main"|"abs", "tip": "...", "visualization_prompt": "..." }]
       }
     `;

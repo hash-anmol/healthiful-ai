@@ -14,6 +14,7 @@ import type * as auth from "../auth.js";
 import type * as feedbacks from "../feedbacks.js";
 import type * as gamification from "../gamification.js";
 import type * as users from "../users.js";
+import type * as weightLogs from "../weightLogs.js";
 import type * as workouts from "../workouts.js";
 
 import type {
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   feedbacks: typeof feedbacks;
   gamification: typeof gamification;
   users: typeof users;
+  weightLogs: typeof weightLogs;
   workouts: typeof workouts;
 }>;
 

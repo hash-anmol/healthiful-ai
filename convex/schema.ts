@@ -104,4 +104,13 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_achievement", ["userId", "achievementId"]),
+
+  weightLogs: defineTable({
+    userId: v.id("users"),
+    date: v.string(),
+    weight: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_user_date", ["userId", "date"])
+    .index("by_user", ["userId"]),
 });
