@@ -23,6 +23,7 @@ export default defineSchema({
     dietType: v.string(),
     dailyActivity: v.string(),
     injuryFlags: v.array(v.string()),
+    medicalConditions: v.optional(v.string()),
     goalAggressiveness: v.string(),
     timelineExpectation: v.string(),
     recoveryCapacity: v.string(),

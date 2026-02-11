@@ -192,6 +192,7 @@ SESSION CONTEXT:
 - Goal: ${user.primaryGoal}, Experience: ${user.trainingExperience}
 - Frequency: ${user.trainingFrequency}, Equipment: ${user.equipmentAccess}
 - Injuries: ${user.injuryFlags.join(", ") || "None"}
+- Medical Conditions: ${user.medicalConditions || "None"}
 - Recovery: ${user.recoveryCapacity}
 
 TRAINING SPLIT (PPL x 2): Mon: Push, Tue: Pull, Wed: Legs, Thu: Push, Fri: Pull, Sat: Legs, Sun: Rest/Active Recovery.
@@ -794,6 +795,24 @@ INSTRUCTIONS:
           {/* Generation title preview */}
           {isGenerating && generationPreview && generationPreview.title !== "Generating..." && (
             <p className="text-sm font-bold text-slate-900 mb-3">{generationPreview.title}</p>
+          )}
+
+          {/* Patience Message */}
+          {isGenerating && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-orange-50/50 border border-orange-100 rounded-2xl p-4 mb-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                  <Sparkles size={16} className="text-[#FF6B00]" />
+                </div>
+                <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                  It can take up to one minute to generate the exercises. So please keep patience and continuing warming up.
+                </p>
+              </div>
+            </motion.div>
           )}
 
           {/* Workout Progress Bar */}

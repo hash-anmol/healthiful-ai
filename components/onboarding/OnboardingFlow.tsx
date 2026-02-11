@@ -18,6 +18,7 @@ import { PrimaryGoalStep } from './steps/PrimaryGoalStep';
 import { DietTypeStep } from './steps/DietTypeStep';
 import { DailyActivityStep } from './steps/DailyActivityStep';
 import { InjuryFlagsStep } from './steps/InjuryFlagsStep';
+import { MedicalConditionsStep } from './steps/MedicalConditionsStep';
 import { GoalAggressivenessStep } from './steps/GoalAggressivenessStep';
 import { TimelineExpectationStep } from './steps/TimelineExpectationStep';
 import { RecoveryCapacityStep } from './steps/RecoveryCapacityStep';
@@ -44,6 +45,7 @@ const defaultData = {
   dietType: '',
   dailyActivity: '',
   injuryFlags: [] as string[],
+  medicalConditions: '',
   goalAggressiveness: '',
   timelineExpectation: '',
   recoveryCapacity: '',
@@ -131,7 +133,8 @@ export default function OnboardingFlow() {
         strengthTest: {
           bicepCurlWeight: Number(data.strengthTest.bicepCurlWeight),
           pushupsCount: Number(data.strengthTest.pushupsCount),
-        }
+        },
+        medicalConditions: data.medicalConditions,
       });
       window.localStorage.removeItem(DRAFT_STORAGE_KEY);
       router.push('/dashboard');
@@ -247,6 +250,14 @@ export default function OnboardingFlow() {
       subtitle: "We'll adjust movements for safety.",
       content: <InjuryFlagsStep data={data} updateData={updateData} />,
       isComplete: data.injuryFlags.length > 0,
+    },
+    {
+      key: "medicalConditions",
+      headerTitle: "Medical Conditions",
+      question: "Any medical conditions?",
+      subtitle: "Tell us about any other health conditions we should keep in mind.",
+      content: <MedicalConditionsStep data={data} updateData={updateData} />,
+      isComplete: true, // Optional field, so it's always "complete" even if empty
     },
     {
       key: "goalAggressiveness",

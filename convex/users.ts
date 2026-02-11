@@ -33,6 +33,7 @@ export const createProfile = mutation({
     dietType: v.string(),
     dailyActivity: v.string(),
     injuryFlags: v.array(v.string()),
+    medicalConditions: v.optional(v.string()),
     goalAggressiveness: v.string(),
     timelineExpectation: v.string(),
     recoveryCapacity: v.string(),
@@ -53,7 +54,7 @@ export const createProfile = mutation({
   handler: async (ctx, args) => {
     // Check if user already exists based on clerkId or email if provided
     let existingUserId;
-    
+
     if (args.clerkId) {
       const existingUser = await ctx.db
         .query("users")
