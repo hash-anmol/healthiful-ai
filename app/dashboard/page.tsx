@@ -20,6 +20,7 @@ import remarkGfm from 'remark-gfm';
 const AI_CARD_BG_URL = "/motivation-bg.png";
 const TITLE_PATTERN = /^(Push|Pull|Legs)\s+(A|B)\s+[—-]\s+.+$/i;
 type WorkoutTypeOverride = "auto" | "push" | "pull" | "legs" | "recovery";
+const WORKOUT_TYPE_STORAGE_KEY = "healthiful.workoutTypeOverrides";
 const WORKOUT_TYPE_OPTIONS: Array<{ value: WorkoutTypeOverride; label: string }> = [
   { value: "auto", label: "Auto" },
   { value: "push", label: "Push" },
@@ -27,6 +28,27 @@ const WORKOUT_TYPE_OPTIONS: Array<{ value: WorkoutTypeOverride; label: string }>
   { value: "legs", label: "Legs" },
   { value: "recovery", label: "Recovery" },
 ];
+
+function loadWorkoutTypeOverrides(): Record<string, WorkoutTypeOverride> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(WORKOUT_TYPE_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, WorkoutTypeOverride>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveWorkoutTypeOverrides(overrides: Record<string, WorkoutTypeOverride>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(WORKOUT_TYPE_STORAGE_KEY, JSON.stringify(overrides));
+  } catch {
+    // Ignore storage errors (private mode or quota)
+  }
+}
 
 function getSplitVariant(dateStr: string): "A" | "B" {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -538,6 +560,25 @@ INSTRUCTIONS:
   useEffect(() => {
     setShowDurationPicker(false);
   }, [selectedDate]);
+
+  useEffect(() => {
+    const overrides = loadWorkoutTypeOverrides();
+    const nextOverride = overrides[dateStr] ?? "auto";
+    setWorkoutTypeOverride(nextOverride);
+  }, [dateStr]);
+
+  useEffect(() => {
+    const overrides = loadWorkoutTypeOverrides();
+    if (workoutTypeOverride === "auto") {
+      if (overrides[dateStr]) {
+        const next = { ...overrides };
+        delete next[dateStr];
+        saveWorkoutTypeOverrides(next);
+      }
+      return;
+    }
+    saveWorkoutTypeOverrides({ ...overrides, [dateStr]: workoutTypeOverride });
+  }, [dateStr, workoutTypeOverride]);
 
   // Reset session stats when workout changes
   useEffect(() => {
