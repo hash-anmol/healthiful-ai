@@ -19,10 +19,31 @@ import remarkGfm from 'remark-gfm';
 
 const AI_CARD_BG_URL = "/motivation-bg.png";
 const TITLE_PATTERN = /^(Push|Pull|Legs)\s+(A|B)\s+[—-]\s+.+$/i;
+type WorkoutTypeOverride = "auto" | "push" | "pull" | "legs" | "recovery";
+const WORKOUT_TYPE_OPTIONS: Array<{ value: WorkoutTypeOverride; label: string }> = [
+  { value: "auto", label: "Auto" },
+  { value: "push", label: "Push" },
+  { value: "pull", label: "Pull" },
+  { value: "legs", label: "Legs" },
+  { value: "recovery", label: "Recovery" },
+];
 
-function getWorkoutSplitLabel(dateStr: string): string {
+function getSplitVariant(dateStr: string): "A" | "B" {
   const [year, month, day] = dateStr.split("-").map(Number);
   const weekday = new Date(year, month - 1, day).getDay();
+  if (weekday >= 4 && weekday <= 6) return "B";
+  return "A";
+}
+
+function getWorkoutSplitLabel(dateStr: string, overrideType: WorkoutTypeOverride = "auto"): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const weekday = new Date(year, month - 1, day).getDay();
+  if (overrideType !== "auto") {
+    if (overrideType === "recovery") return "Recovery Day";
+    const variant = getSplitVariant(dateStr);
+    const label = overrideType.charAt(0).toUpperCase() + overrideType.slice(1);
+    return `${label} ${variant}`;
+  }
   switch (weekday) {
     case 1:
       return "Push A";
@@ -52,8 +73,13 @@ function getFocusFromExercises(exercises: any[]): string {
   return focusWords || "Strength";
 }
 
-function normalizeWorkoutTitle(rawTitle: string | undefined, dateStr: string, exercises: any[]): string {
-  const split = getWorkoutSplitLabel(dateStr);
+function normalizeWorkoutTitle(
+  rawTitle: string | undefined,
+  dateStr: string,
+  exercises: any[],
+  overrideType: WorkoutTypeOverride = "auto"
+): string {
+  const split = getWorkoutSplitLabel(dateStr, overrideType);
   const title = rawTitle?.trim() || "";
   if (TITLE_PATTERN.test(title)) {
     return title.replace(/\s*[-–—]\s*/, " — ");
@@ -130,7 +156,9 @@ export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [duration, setDuration] = useState(45);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [workoutTypeOverride, setWorkoutTypeOverride] = useState<WorkoutTypeOverride>("auto");
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const splitLabel = getWorkoutSplitLabel(dateStr, workoutTypeOverride);
 
   const workout = useQuery(api.workouts.getWorkout, user ? { userId: user._id, date: dateStr } : "skip");
   const generateWorkoutAction = useAction(api.actions.generateWorkout);
@@ -182,6 +210,10 @@ export default function DashboardPage() {
         .join("\n");
 
       const dayOfWeek = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long' });
+      const overrideLine = workoutTypeOverride !== "auto" ? `\nSELECTED SPLIT OVERRIDE: ${splitLabel}. Do NOT infer from weekday.` : "";
+      const feedbackWithOverride = workoutTypeOverride !== "auto"
+        ? `${feedback.trim() ? `${feedback.trim()}\n` : ""}Split Override: ${splitLabel}`
+        : feedback.trim();
       const streamPrompt = `
 You are Jacked AI — an expert workout planner with deep knowledge of exercise science, progressive overload, and time management.
 
@@ -196,7 +228,7 @@ SESSION CONTEXT:
 - Recovery: ${user.recoveryCapacity}
 
 TRAINING SPLIT (PPL x 2): Mon: Push, Tue: Pull, Wed: Legs, Thu: Push, Fri: Pull, Sat: Legs, Sun: Rest/Active Recovery.
-Infer the workout type from the day of the week above.
+Infer the workout type from the day of the week above.${overrideLine}
 
 TITLE FORMAT RULE (STRICT):
 - Must be EXACTLY: "<Split> — <Focus>"
@@ -212,7 +244,7 @@ TIME ESTIMATION RULE (CRITICAL):
 - Keep a running total. Stop adding exercises when the total reaches ${duration} minutes.
 - Do NOT use a fixed exercise count. Let the time budget decide.
 
-User feedback for regeneration: ${feedback.trim() || "None"}
+User feedback for regeneration: ${feedbackWithOverride || "None"}
 Historical exercise feedbacks:
 ${feedbackBlock || "None"}
 If an exercise is flagged in feedbacks, avoid it or use a close alternative.
@@ -246,7 +278,7 @@ No markdown. No extra text. No explanation.
                 streamedPlan.exercises.push(parsed.exercise);
               }
               setGenerationPreview({
-                title: normalizeWorkoutTitle(streamedPlan.title, dateStr, streamedPlan.exercises),
+                title: normalizeWorkoutTitle(streamedPlan.title, dateStr, streamedPlan.exercises, workoutTypeOverride),
                 exercises: [...streamedPlan.exercises],
               });
             } catch {
@@ -275,7 +307,7 @@ No markdown. No extra text. No explanation.
         const fallbackPlan = await generateWorkoutAction({
           userId: user._id,
           date: dateStr,
-          feedback: feedback.trim() || undefined,
+          feedback: feedbackWithOverride || undefined,
           duration,
         });
         if (!fallbackPlan) throw new Error("No streamed or fallback plan generated");
@@ -286,7 +318,7 @@ No markdown. No extra text. No explanation.
       await saveWorkout({
         userId: user._id,
         date: dateStr,
-        title: normalizeWorkoutTitle(streamedPlan.title, dateStr, streamedPlan.exercises),
+        title: normalizeWorkoutTitle(streamedPlan.title, dateStr, streamedPlan.exercises, workoutTypeOverride),
         exercises: streamedPlan.exercises.map((ex: any) => sanitizeExerciseForDb(ex)),
       });
 
@@ -503,6 +535,10 @@ INSTRUCTIONS:
     return () => window.removeEventListener("jacked-ai-toggle", handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    setShowDurationPicker(false);
+  }, [selectedDate]);
+
   // Reset session stats when workout changes
   useEffect(() => {
     setSessionCoins(0);
@@ -589,7 +625,7 @@ INSTRUCTIONS:
             <div className="text-lg font-bold mt-1 text-slate-900">
               {workout === undefined ? (
                 <Skeleton className="h-5 w-40 inline-block" />
-              ) : workout ? normalizeWorkoutTitle(workout.title, dateStr, workout.exercises) : "No Plan Selected"}
+              ) : workout ? normalizeWorkoutTitle(workout.title, dateStr, workout.exercises, workoutTypeOverride) : "No Plan Selected"}
             </div>
           </div>
           <div className="relative">
@@ -612,8 +648,11 @@ INSTRUCTIONS:
                   initial={{ opacity: 0, scale: 0.9, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                  className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 min-w-[120px]"
+                  className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 min-w-[180px]"
                 >
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Duration
+                  </div>
                   {[20, 30, 45, 50, 60].map((d) => (
                     <button
                       key={d}
@@ -631,6 +670,28 @@ INSTRUCTIONS:
                       {d} Minutes
                     </button>
                   ))}
+                  <div className="mt-2 pt-2 border-t border-slate-100">
+                    <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                      Workout Type
+                    </div>
+                    {WORKOUT_TYPE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setWorkoutTypeOverride(option.value);
+                          setShowDurationPicker(false);
+                        }}
+                        className={cn(
+                          "w-full px-4 py-2 text-left rounded-xl text-sm font-bold transition-colors",
+                          workoutTypeOverride === option.value
+                            ? "bg-orange-50 text-[#FF6B00]"
+                            : "text-slate-600 hover:bg-slate-50"
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
