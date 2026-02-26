@@ -6,9 +6,10 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Trophy, Flame, CalendarDays, TrendingUp, Sparkles, Scale } from 'lucide-react';
+import { Trophy, Flame, CalendarDays, TrendingUp, Sparkles, Scale, Flower2 } from 'lucide-react';
 import { format, startOfWeek, subWeeks, endOfWeek, subDays } from 'date-fns';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { canAccessSadhana } from '@/lib/featureFlags';
 
 const toISODate = (date: Date) => format(date, 'yyyy-MM-dd');
 
@@ -80,6 +81,11 @@ export default function AnalyticsPage() {
   const weightHistory = useQuery(
     api.weightLogs.getWeightHistory,
     user ? { userId: user._id, days: 90 } : 'skip'
+  );
+
+  const sadhanaStats = useQuery(
+    api.mantras.getSadhanaStats,
+    user ? { userId: user._id } : 'skip'
   );
 
   const exerciseOptions = useMemo(() => {
@@ -462,12 +468,12 @@ export default function AnalyticsPage() {
                   key={day.date}
                   title={`${day.date}: ${day.workouts} workouts`}
                   className={`aspect-square rounded-lg transition-all duration-300 ${day.workouts === 0
-                      ? 'bg-slate-100 hover:bg-slate-200'
-                      : day.workouts === 1
-                        ? 'bg-orange-200 hover:bg-orange-300'
-                        : day.workouts === 2
-                          ? 'bg-orange-400 hover:bg-orange-500'
-                          : 'bg-orange-600 hover:bg-orange-700'
+                    ? 'bg-slate-100 hover:bg-slate-200'
+                    : day.workouts === 1
+                      ? 'bg-orange-200 hover:bg-orange-300'
+                      : day.workouts === 2
+                        ? 'bg-orange-400 hover:bg-orange-500'
+                        : 'bg-orange-600 hover:bg-orange-700'
                     }`}
                 />
               ))}
@@ -485,6 +491,149 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ─── Sadhana Analytics ────────────────────────────────── */}
+      {canAccessSadhana(authUser?.email) && sadhanaStats && sadhanaStats.totalChanted > 0 && (
+        <>
+          <div className="flex items-center gap-3 mt-4">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8B1A1A, #E67E22)' }}>
+              <Flower2 className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Sadhana Progress</h2>
+              <p className="text-xs text-slate-400 font-medium">Your mantra chanting journey</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Chanted</CardTitle>
+                <span className="text-lg">🕉️</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-black text-slate-900">{sadhanaStats.totalChanted.toLocaleString('en-IN')}</div>
+                <p className="text-xs font-semibold text-slate-400 mt-1">
+                  {((sadhanaStats.totalChanted / sadhanaStats.siddhiGoal) * 100).toFixed(1)}% towards Siddhi
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Sadhana Streak</CardTitle>
+                <Flame className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-black text-slate-900">{sadhanaStats.currentStreak} <span className="text-lg font-bold text-slate-400">Days</span></div>
+                <p className="text-xs font-semibold text-slate-400 mt-1">Longest: {sadhanaStats.longestStreak} days</p>
+              </CardContent>
+            </Card>
+            <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Siddhi Goal</CardTitle>
+                <span className="text-lg">🪷</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-black text-slate-900">{((sadhanaStats.siddhiGoal - sadhanaStats.totalChanted) / 1000).toFixed(0)}K <span className="text-lg font-bold text-slate-400">left</span></div>
+                <p className="text-xs font-semibold text-slate-400 mt-1">of 9,00,000 Navarna Mantras</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+            {/* Weekly Chanting Chart */}
+            <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl font-bold text-slate-900">Weekly Japa</CardTitle>
+                <CardDescription className="font-medium text-slate-500">
+                  Daily chant count over the last 7 days.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                {sadhanaStats.weeklyData.every((d) => d.chants === 0) ? (
+                  <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 bg-amber-50/50 rounded-3xl border border-dashed border-amber-200 m-4">
+                    <Flower2 className="h-8 w-8 text-amber-300 mb-3" />
+                    <p className="text-sm font-bold text-amber-400">No chanting this week yet.</p>
+                    <p className="text-xs text-amber-400 mt-1">Start your japa to see trends.</p>
+                  </div>
+                ) : (
+                  <div className="h-[300px] w-full pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={sadhanaStats.weeklyData}>
+                        <XAxis
+                          dataKey="name"
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          fontWeight={600}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          fontWeight={600}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ fill: '#fffbeb', radius: 8 }}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl border-none text-xs font-bold">
+                                  {payload[0].value?.toLocaleString()} chants
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="chants" fill="#D4451A" radius={[8, 8, 8, 8]} barSize={32} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sadhana Heatmap */}
+            <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2.5rem] overflow-hidden">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-slate-900">Sadhana Calendar</CardTitle>
+                <CardDescription className="font-medium text-slate-500">30-day chanting activity.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-7 gap-2">
+                  {sadhanaStats.heatmap.map((day) => (
+                    <div
+                      key={day.date}
+                      title={`${day.date}: ${day.count.toLocaleString()} chants`}
+                      className={`aspect-square rounded-lg transition-all duration-300 ${!day.chanted
+                        ? 'bg-slate-100 hover:bg-slate-200'
+                        : day.count < 324
+                          ? 'bg-amber-200 hover:bg-amber-300'
+                          : day.count < 648
+                            ? 'bg-orange-400 hover:bg-orange-500'
+                            : 'bg-red-600 hover:bg-red-700'
+                        }`}
+                    />
+                  ))}
+                </div>
+                <div className="mt-6 flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Less</p>
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-slate-100" />
+                    <div className="w-3 h-3 rounded-sm bg-amber-200" />
+                    <div className="w-3 h-3 rounded-sm bg-orange-400" />
+                    <div className="w-3 h-3 rounded-sm bg-red-600" />
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">More</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 }

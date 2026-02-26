@@ -35,4 +35,5 @@ export const REWARDS = {
   STREAK_7: { coins: 100, xp: 150 },
   FIRST_WORKOUT_OF_WEEK: { coins: 20, xp: 30 },
   RPE_LOGGED: { coins: 5, xp: 5 },
+  MANTRA_SESSION: { coins: 15, xp: 20 },
 } as const;

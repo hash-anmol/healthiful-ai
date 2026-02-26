@@ -13,6 +13,8 @@ import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as feedbacks from "../feedbacks.js";
 import type * as gamification from "../gamification.js";
+import type * as mantras from "../mantras.js";
+import type * as meditation from "../meditation.js";
 import type * as users from "../users.js";
 import type * as weightLogs from "../weightLogs.js";
 import type * as workouts from "../workouts.js";
@@ -29,6 +31,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   feedbacks: typeof feedbacks;
   gamification: typeof gamification;
+  mantras: typeof mantras;
+  meditation: typeof meditation;
   users: typeof users;
   weightLogs: typeof weightLogs;
   workouts: typeof workouts;

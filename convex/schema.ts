@@ -114,4 +114,37 @@ export default defineSchema({
   })
     .index("by_user_date", ["userId", "date"])
     .index("by_user", ["userId"]),
+
+  mantraProfiles: defineTable({
+    userId: v.id("users"),
+    mantraName: v.string(),
+    mantraText: v.string(),
+    totalChanted: v.number(),
+    siddhiGoal: v.number(),
+    currentStreak: v.number(),
+    longestStreak: v.number(),
+    lastChantDate: v.optional(v.string()),
+  }).index("by_user", ["userId"]),
+
+  mantraLogs: defineTable({
+    userId: v.id("users"),
+    date: v.string(),
+    count: v.number(),
+    malas: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_date", ["userId", "date"]),
+
+  meditationSessions: defineTable({
+    userId: v.id("users"),
+    date: v.string(),
+    durationSeconds: v.number(),
+    malasGoal: v.number(),
+    malasCompleted: v.number(),
+    chantCount: v.number(),
+    completedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_date", ["userId", "date"]),
 });

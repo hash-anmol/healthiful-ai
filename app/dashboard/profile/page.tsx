@@ -4,14 +4,15 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, User, Settings, LogOut, Plus, Trophy, Flame, Coins, Zap, Star, TrendingUp, Crown, Target, Dumbbell, Scale } from 'lucide-react';
+import { Trash2, User, Settings, LogOut, Plus, Trophy, Flame, Coins, Zap, Star, TrendingUp, Crown, Target, Dumbbell, Scale, Flower2, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ACHIEVEMENTS, RARITY_COLORS, type AchievementDef } from '@/lib/achievements';
-import { motion } from 'framer-motion';
+import { ACHIEVEMENTS, RARITY_COLORS, SADHANA_ACHIEVEMENT_ICONS, ACHIEVEMENT_CATEGORIES, type AchievementDef, type AchievementCategory } from '@/lib/achievements';
+import { canAccessSadhana } from '@/lib/featureFlags';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -33,6 +34,147 @@ const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
   Trophy: <Trophy size={20} />,
 };
 
+function AchievementsCarousel({
+  unlockedIds,
+  showSadhana,
+}: {
+  unlockedIds: Set<string>;
+  showSadhana: boolean;
+}) {
+  const categories = useMemo(() => {
+    return ACHIEVEMENT_CATEGORIES.filter((cat) => {
+      if (!showSadhana && (cat.key === 'sadhana' || cat.key === 'meditation')) return false;
+      const achs = Object.values(ACHIEVEMENTS).filter((a) => a.category === cat.key);
+      return achs.length > 0;
+    });
+  }, [showSadhana]);
+
+  const [catIndex, setCatIndex] = useState(0);
+  const cat = categories[catIndex];
+  const catAchievements = useMemo(
+    () => Object.values(ACHIEVEMENTS).filter((a) => a.category === cat?.key),
+    [cat?.key]
+  );
+  const unlockedCount = catAchievements.filter((a) => unlockedIds.has(a.id)).length;
+
+  const goPrev = () => setCatIndex((i) => (i - 1 + categories.length) % categories.length);
+  const goNext = () => setCatIndex((i) => (i + 1) % categories.length);
+
+  if (!cat) return null;
+
+  return (
+    <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2rem] overflow-hidden">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+          <Trophy size={20} className="text-amber-500" />
+          Achievements
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Category nav */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={goPrev}
+            className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:scale-95 transition-all"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-lg">{cat.emoji}</span>
+              <span className="text-sm font-bold text-slate-700">{cat.label}</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400">
+              {unlockedCount} / {catAchievements.length} unlocked
+            </span>
+          </div>
+          <button
+            onClick={goNext}
+            className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:scale-95 transition-all"
+          >
+            <ChevronRightIcon size={18} />
+          </button>
+        </div>
+
+        {/* Pagination dots */}
+        <div className="flex items-center justify-center gap-1.5 mb-4">
+          {categories.map((c, i) => (
+            <button
+              key={c.key}
+              onClick={() => setCatIndex(i)}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all",
+                i === catIndex
+                  ? "bg-[#FF6B00] w-5"
+                  : "bg-slate-200 hover:bg-slate-300"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Achievement list */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={cat.key}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+          >
+            {catAchievements.map((ach) => {
+              const isUnlocked = unlockedIds.has(ach.id);
+              const colors = RARITY_COLORS[ach.rarity];
+              return (
+                <div
+                  key={ach.id}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-2xl border transition-all",
+                    isUnlocked
+                      ? `${colors.bg} ${colors.border} shadow-sm`
+                      : "bg-slate-50 border-slate-100 opacity-50"
+                  )}
+                >
+                  <div className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden",
+                    isUnlocked ? `${colors.bg} ${colors.text}` : "bg-slate-100 text-slate-300"
+                  )}>
+                    {SADHANA_ACHIEVEMENT_ICONS[ach.icon] ? (
+                      <img
+                        src={SADHANA_ACHIEVEMENT_ICONS[ach.icon]}
+                        alt={ach.title}
+                        className={cn("w-7 h-7 rounded-lg object-cover", !isUnlocked && "grayscale opacity-40")}
+                      />
+                    ) : (
+                      ACHIEVEMENT_ICONS[ach.icon] || <Trophy size={18} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn(
+                      "text-sm font-bold truncate",
+                      isUnlocked ? "text-slate-900" : "text-slate-400"
+                    )}>
+                      {ach.title}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium truncate">{ach.description}</p>
+                  </div>
+                  {isUnlocked && (
+                    <div className="shrink-0">
+                      <div className="flex items-center gap-0.5 text-amber-600 text-[9px] font-bold bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-100">
+                        <Coins size={8} /> +{ach.coinBonus}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { authUser, logout } = useAuth();
@@ -50,6 +192,11 @@ export default function ProfilePage() {
   );
   const achievements = useQuery(
     api.gamification.getAchievements,
+    user?._id ? { userId: user._id } : "skip"
+  );
+
+  const mantraProfile = useQuery(
+    api.mantras.getMantraProfile,
     user?._id ? { userId: user._id } : "skip"
   );
 
@@ -132,7 +279,7 @@ export default function ProfilePage() {
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] p-6 text-white shadow-xl shadow-orange-200">
           <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-white/10 blur-2xl" />
-          
+
           <div className="relative">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -191,6 +338,16 @@ export default function ProfilePage() {
             <p className="text-2xl font-black text-slate-900">{gameProfile.personalRecords}</p>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PRs</p>
           </div>
+          <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm text-center">
+            <span className="text-lg block mb-0.5">🕉️</span>
+            <p className="text-2xl font-black text-slate-900">{(mantraProfile?.totalChanted ?? 0).toLocaleString("en-IN")}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mantras</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm text-center">
+            <span className="text-lg block mb-0.5">📿</span>
+            <p className="text-2xl font-black text-slate-900">{mantraProfile?.currentStreak ?? 0}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Japa Streak</p>
+          </div>
         </div>
       )}
 
@@ -231,59 +388,11 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Achievements */}
-      <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2rem] overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
-            <Trophy size={20} className="text-amber-500" />
-            Achievements
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {Object.values(ACHIEVEMENTS).map((ach: AchievementDef) => {
-              const isUnlocked = unlockedIds.has(ach.id);
-              const colors = RARITY_COLORS[ach.rarity];
-              return (
-                <motion.div
-                  key={ach.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
-                    isUnlocked
-                      ? `${colors.bg} ${colors.border} shadow-sm`
-                      : "bg-slate-50 border-slate-100 opacity-50"
-                  )}
-                >
-                  <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                    isUnlocked ? `${colors.bg} ${colors.text}` : "bg-slate-100 text-slate-300"
-                  )}>
-                    {ACHIEVEMENT_ICONS[ach.icon] || <Trophy size={20} />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className={cn(
-                      "text-sm font-bold truncate",
-                      isUnlocked ? "text-slate-900" : "text-slate-400"
-                    )}>
-                      {ach.title}
-                    </p>
-                    <p className="text-[10px] text-slate-400 font-medium truncate">{ach.description}</p>
-                  </div>
-                  {isUnlocked && (
-                    <div className="shrink-0 ml-auto">
-                      <div className="flex items-center gap-0.5 text-amber-600 text-[9px] font-bold bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-100">
-                        <Coins size={8} /> +{ach.coinBonus}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Achievements — Paginated Carousel */}
+      <AchievementsCarousel
+        unlockedIds={unlockedIds}
+        showSadhana={canAccessSadhana(authUser?.email)}
+      />
 
       {/* Exercise Feedbacks */}
       <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-[2rem] overflow-hidden">

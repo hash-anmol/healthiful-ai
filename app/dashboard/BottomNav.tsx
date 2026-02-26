@@ -2,21 +2,33 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LineChart, User, Sparkles } from 'lucide-react';
+import { LayoutDashboard, LineChart, User, Sparkles, Flower2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { canAccessSadhana } from '@/lib/featureFlags';
 
 const NAV_LEFT = [
-  { href: '/dashboard', label: 'Plan', icon: LayoutDashboard, exact: true },
+  { href: '/dashboard', label: 'Workout', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/analytics', label: 'Progress', icon: LineChart, exact: false },
 ];
 
 const NAV_RIGHT = [
+  { href: '/dashboard/sadhana', label: 'Sadhana', icon: Flower2, exact: false },
   { href: '/dashboard/profile', label: 'Me', icon: User, exact: false },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { authUser } = useAuth();
+  const showSadhana = canAccessSadhana(authUser?.email);
+
+  // Hide nav during meditation session
+  if (pathname.includes('/sadhana/meditation')) return null;
+
+  const navRight = showSadhana
+    ? NAV_RIGHT
+    : NAV_RIGHT.filter((item) => item.href !== '/dashboard/sadhana');
 
   const isActive = (href: string, exact: boolean) => {
     if (exact) return pathname === href;
@@ -94,7 +106,7 @@ export function BottomNav() {
         </button>
 
         {/* Right nav items */}
-        {NAV_RIGHT.map(renderNavItem)}
+        {navRight.map(renderNavItem)}
       </div>
 
       {/* Safe area spacer for phones with home indicators */}
