@@ -87,19 +87,19 @@
     const xs = doneLogs().slice(-7).map((l) => l.steps?.[id]).filter((x) => x > 5);
     return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
   }
-  function paathSec() {
+  function paathSec(o) {
     const xs = doneLogs().flatMap((l) => l.paaths || []).filter((x) => x > 120).slice(-15);
     if (xs.length) return xs.reduce((a, b) => a + b, 0) / xs.length;
-    return (S().sankalp?.paathMin || 22) * 60;
+    return ((o && o.pmin) || S().sankalp?.paathMin || 22) * 60;
   }
-  function estimate(dayNo) {
-    const sk = S().sankalp; const n = sk?.paathPerDay || 5;
+  function estimate(dayNo, o) {
+    const sk = S().sankalp; const n = (o && o.n) || sk?.paathPerDay || 5;
     const bySec = {}; let total = 0;
     for (const st of stepsForDay(dayNo)) {
-      const v = st.mode === "paath" ? paathSec() * n : (avgStep(st.id) ?? st.est);
+      const v = st.mode === "paath" ? paathSec(o) * n : (avgStep(st.id) ?? st.est);
       bySec[st.sec] = (bySec[st.sec] || 0) + v; total += v;
     }
-    return { total, bySec, perPaath: paathSec(), n, learned: doneLogs().length > 0 };
+    return { total, bySec, perPaath: paathSec(o), n, learned: doneLogs().length > 0 };
   }
 
   // ---------- status ----------
@@ -189,115 +189,86 @@
     if (v === "vidhi") renderVidhi(); if (v === "naam") renderNaam(); if (v === "yatra") renderYatra(); if (v === "home") renderHome();
   }
 
-  function setupForm() {
-    const d = S().sankalp || {};
-    return `
-      <div class="card" style="gap:14px">
-        <h3>Take your sankalpa</h3>
-        <p class="hint">These details go into your Day 1 vow. You can change them later in Settings.</p>
-        <div class="field"><label for="f-name">Your name</label><input id="f-name" value="${esc(d.name || "")}" placeholder="Anmol" autocomplete="name"></div>
-        <div class="grid2">
-          <div class="field"><label for="f-gotra">Gotra</label><input id="f-gotra" value="${esc(d.gotra || "")}" placeholder="Optional"></div>
-          <div class="field"><label for="f-dob">Date of birth</label><input id="f-dob" value="${esc(d.dob || "")}" placeholder="DD-MM-YYYY"></div>
-        </div>
-        <div class="field"><label>Duration</label><div class="seg" id="f-days">${[31, 50].map((n) => `<button type="button" data-n="${n}" class="${(d.days || 31) === n ? "on" : ""}">${n} days</button>`).join("")}<button type="button" data-n="custom" class="${d.days && ![31, 50].includes(d.days) ? "on" : ""}">Custom</button></div>
-          <input id="f-days-c" type="number" min="1" max="120" value="${d.days && ![31, 50].includes(d.days) ? d.days : ""}" placeholder="Days" ${d.days && ![31, 50].includes(d.days) ? "" : "hidden"}></div>
-        <div class="grid2">
-          <div class="field"><label for="f-paath">Recitations per day</label><input id="f-paath" type="number" min="5" max="21" value="${d.paathPerDay || 5}"></div>
-          <div class="field"><label for="f-pmin">One recitation (min)</label><input id="f-pmin" type="number" min="8" max="60" value="${d.paathMin || 22}"></div>
-        </div>
-        <p class="hint">The vidhi asks for at least 5 recitations. The app learns your real time per recitation after the first day.</p>
-        <div class="field"><label for="f-wish">Wish / intention</label><textarea id="f-wish" rows="2" placeholder="Optional: what you want to ask of the Mother">${esc(d.wish || "")}</textarea></div>
-        <div class="field"><label>Start</label><div class="seg" id="f-start"><button type="button" data-s="0" class="on">Today</button><button type="button" data-s="1">Tomorrow</button></div></div>
-        <button class="btn btn-primary btn-block" id="f-go">Set my sankalpa</button>
-      </div>`;
-  }
-  function bindSetup(root) {
-    let days = S().sankalp?.days || 31, startOff = 0;
-    root.querySelectorAll("#f-days button").forEach((b) => b.onclick = () => {
-      root.querySelectorAll("#f-days button").forEach((x) => x.classList.toggle("on", x === b));
-      const c = $("#f-days-c", root); c.hidden = b.dataset.n !== "custom"; days = b.dataset.n === "custom" ? (+c.value || 41) : +b.dataset.n;
-    });
-    $("#f-days-c", root)?.addEventListener("input", (e) => (days = +e.target.value || days));
-    root.querySelectorAll("#f-start button").forEach((b) => b.onclick = () => { root.querySelectorAll("#f-start button").forEach((x) => x.classList.toggle("on", x === b)); startOff = +b.dataset.s; });
-    $("#f-go", root).onclick = () => {
-      const v = (id) => $(id, root).value.trim();
-      S().sankalp = {
-        name: v("#f-name"), gotra: v("#f-gotra"), dob: v("#f-dob"), wish: v("#f-wish"),
-        days: Math.max(1, Math.min(120, days)), paathPerDay: Math.max(5, Math.min(21, +v("#f-paath") || 5)), paathMin: Math.max(8, Math.min(60, +v("#f-pmin") || 22)),
-        dayStart: 4, startKey: addDays(todayKey(), startOff), created: Date.now()
-      };
+  // ---------- guided setup (three short questions) ----------
+  const setup = { step: 0, days: 31, custom: false, startOff: 0, n: 5, name: "", gotra: "", dob: "", wish: "" };
+  const estimateFor = (n) => { const e = estimate(1, { n, pmin: 22 }); return e.total; };
+  function renderSetup(el) {
+    const dots = `<div class="dots">${[0, 1, 2].map((i) => `<i class="${i <= setup.step ? "on" : ""}"></i>`).join("")}</div>`;
+    let body = "";
+    if (setup.step === 0) {
+      body = `<h2 class="q">How long will your sankalpa be?</h2>
+        <div class="seg" id="f-days">${[31, 50].map((n) => `<button data-n="${n}" class="${!setup.custom && setup.days === n ? "on" : ""}">${n} days</button>`).join("")}<button data-n="custom" class="${setup.custom ? "on" : ""}">Other</button></div>
+        ${setup.custom ? `<div class="field" style="max-width:200px"><label for="f-days-c">Number of days</label><input id="f-days-c" type="number" min="1" max="120" value="${setup.days}"></div>` : ""}
+        <p class="quiet">${setup.startOff ? "Starts tomorrow." : "Starts today."} <button class="link" id="f-start">${setup.startOff ? "Start today instead" : "Start tomorrow instead"}</button></p>
+        <button class="btn btn-primary" id="f-next">Continue</button>`;
+    } else if (setup.step === 1) {
+      body = `<h2 class="q">How many recitations each day?</h2>
+        <div class="stepper"><button class="round" id="f-minus" aria-label="Fewer">–</button><b class="num">${setup.n}</b><button class="round" id="f-plus" aria-label="More">+</button></div>
+        <p class="line">About <b>${fmtDur(estimateFor(setup.n))}</b> a day.</p><p class="quiet">The vidhi asks for at least five.</p>
+        <div class="row"><button class="btn btn-primary" id="f-next">Continue</button><button class="link" id="f-back">Back</button></div>`;
+    } else {
+      body = `<h2 class="q">For your vow</h2><p class="quiet">Spoken in the sankalpa on Day 1. Everything here is optional.</p>
+        <div class="fields"><div class="field"><label for="f-name">Your name</label><input id="f-name" value="${esc(setup.name)}" autocomplete="name"></div>
+        <div class="grid2"><div class="field"><label for="f-gotra">Gotra</label><input id="f-gotra" value="${esc(setup.gotra)}"></div><div class="field"><label for="f-dob">Date of birth</label><input id="f-dob" value="${esc(setup.dob)}" placeholder="DD-MM-YYYY"></div></div>
+        <div class="field"><label for="f-wish">What you ask of the Mother</label><textarea id="f-wish" rows="2">${esc(setup.wish)}</textarea></div></div>
+        <div class="row"><button class="btn btn-primary" id="f-go">Set my sankalpa</button><button class="link" id="f-back">Back</button></div>`;
+    }
+    el.innerHTML = `<div class="inner"><div class="meta">Lalita Sahasranama Sadhana</div>${body}${dots}</div>`;
+    const go = (n) => { setup.step = n; renderSetup(el); };
+    el.querySelectorAll("#f-days button").forEach((b) => b.onclick = () => { if (b.dataset.n === "custom") { setup.custom = true; setup.days = Math.max(1, Math.min(120, setup.days)); } else { setup.custom = false; setup.days = +b.dataset.n; } renderSetup(el); });
+    $("#f-days-c", el)?.addEventListener("input", (e) => (setup.days = Math.max(1, Math.min(120, +e.target.value || 1))));
+    $("#f-start", el)?.addEventListener("click", () => { setup.startOff = setup.startOff ? 0 : 1; renderSetup(el); });
+    $("#f-minus", el)?.addEventListener("click", () => { setup.n = Math.max(5, setup.n - 1); renderSetup(el); });
+    $("#f-plus", el)?.addEventListener("click", () => { setup.n = Math.min(21, setup.n + 1); renderSetup(el); });
+    $("#f-next", el)?.addEventListener("click", () => go(setup.step + 1));
+    $("#f-back", el)?.addEventListener("click", () => go(setup.step - 1));
+    ["name", "gotra", "dob", "wish"].forEach((k) => $("#f-" + k, el)?.addEventListener("input", (e) => (setup[k] = e.target.value)));
+    $("#f-go", el)?.addEventListener("click", () => {
+      S().sankalp = { name: setup.name.trim(), gotra: setup.gotra.trim(), dob: setup.dob.trim(), wish: setup.wish.trim(), days: setup.days, paathPerDay: setup.n, paathMin: 22, dayStart: 4, startKey: addDays(todayKey(), setup.startOff), created: Date.now() };
       S().session = null; S().ack = []; save(true); bell(); toast("Sankalpa set. Jai Maa."); renderHome();
-    };
+    });
   }
 
+  // ---------- home ----------
   function renderHome() {
     const el = $("#homePanel"); const s = S(), sk = s.sankalp, st = status();
     window.Hut?.setDays(sk ? sk.days : 0, st ? st.doneCount : 0);
-    const head = `<div class="hero"><button class="arch" id="b-darshan" aria-label="View Mother Lalita"><img src="${A.lalita}" alt="Mother Lalita Tripura Sundari"></button><div><div class="eyebrow">Inspired by Shri Om Swami · Shrividya</div><h1 class="title">Lalita Sahasranama Sadhana</h1><div class="title-hi">श्रीललितासहस्रनाम मालामन्त्र जपविधि</div></div></div>`;
-    if (!sk) {
-      const e = estimate(1);
-      el.innerHTML = head + estCard(e, null) + setupForm();
-      bindSetup(el); $("#b-darshan", el).onclick = openDarshan; return;
-    }
+    if (!sk) return renderSetup(el);
     const e = estimate(st.dayNo);
-    let today;
-    const sess = s.session && s.session.key === st.today ? s.session : null;
-    if (st.complete) today = `<span class="chip done">Sankalpa complete</span>`;
-    else if (st.notStarted) today = `<span class="chip">Starts ${fmtDate(sk.startKey)}</span>`;
-    else if (st.todayDone) today = `<span class="chip done">Today's sadhana complete</span>`;
-    else if (sess) today = `<span class="chip live">In progress · Step ${stepsForDay(st.dayNo)[sess.i]?.n ?? 1}</span>`;
-    else today = `<span class="chip ${st.windowLeft < e.total + 1800 ? "urgent" : ""}">Still to do today</span>`;
-
-    const lamps = Array.from({ length: sk.days }, (_, i) => {
-      const k = addDays(sk.startKey, i);
-      const cls = st.doneKeys[i] ? "lit" : "";
-      return `<i class="lamp-dot ${cls}" title="Day ${i + 1}"></i>`;
-    }).join("");
-    const missBanner = st.unack.length && !st.complete ? `
-      <div class="banner"><p><b>${st.unack.length === 1 ? `You missed ${fmtDate(st.unack[0])}.` : `You missed ${st.unack.length} days.`}</b> Traditionally, when a sankalpa is broken the sadhana restarts from Day 1. The choice is yours.</p>
-        <div class="row"><button class="btn btn-gold btn-sm" id="b-restart">Restart from Day 1</button><button class="btn btn-ghost btn-sm" id="b-ack">Keep going</button></div></div>` : "";
-    const startBtn = st.complete
-      ? `<button class="btn btn-gold btn-block" id="b-new">Take a new sankalpa</button>`
-      : st.notStarted ? `<button class="btn btn-ghost btn-block" disabled>Sadhana begins ${fmtDate(sk.startKey)}</button>`
-      : st.todayDone ? `<button class="btn btn-ghost btn-block" id="b-extra">Do one extra recitation</button>`
-      : `<button class="btn btn-primary btn-block" id="b-start">${sess ? "Resume sadhana" : st.dayNo === 1 ? "Begin Day 1 with your sankalpa" : "Begin today's sadhana"}</button>`;
+    const sess0 = s.session && s.session.key === st.today ? s.session : null;
+    const urgentAt = new Date(st.windowEnd - e.total * 1000);
+    let line = "", sub = "";
+    if (st.complete) line = "Your sankalpa is complete. Pranam.";
+    else if (st.notStarted) line = `Your sadhana begins on <b>${fmtDate(sk.startKey)}</b>.`;
+    else if (st.todayDone) line = `Today's sadhana is complete.${st.streak > 1 ? ` <b>${st.streak}</b> days in a row.` : ""}`;
+    else if (sess0) line = `You are on step <b>${(stepsForDay(st.dayNo)[sess0.i]?.n) ?? 1}</b> of ${stepsForDay(st.dayNo).length}.`;
+    else {
+      line = `About <b>${fmtDur(e.total)}</b>. Finish by <b>${fmtTime(new Date(Date.now() + e.total * 1000))}</b> if you start now.`;
+      sub = urgentAt > new Date() ? `Start before ${fmtTime(urgentAt)} to keep today's lamp.` : "Time is getting short. Start now to keep today's lamp.";
+    }
+    const alertHTML = st.unack.length && !st.complete ? `<div class="alert"><p>${st.unack.length === 1 ? `You missed ${fmtDate(st.unack[0])}.` : `You missed ${st.unack.length} days.`} Traditionally the sadhana then restarts from Day 1.</p><div class="row"><button class="btn btn-gold btn-sm" id="b-restart">Restart from Day 1</button><button class="link" id="b-ack">Keep going</button></div></div>` : "";
+    const btn = st.complete ? `<button class="btn btn-gold" id="b-new">Take a new sankalpa</button>`
+      : st.notStarted ? ""
+      : st.todayDone ? `<button class="btn btn-ghost" id="b-extra">One more recitation</button>`
+      : `<button class="btn btn-primary" id="b-start">${sess0 ? "Resume" : "Begin"}</button>`;
+    const order = Object.keys(SECTIONS).filter((k) => e.bySec[k]);
+    const inc = st.complete || st.todayDone || st.notStarted ? "" : `<details class="inc"><summary>What today includes</summary><div class="inc-list">${order.map((k) => `<div><span><i style="background:${SEC_COLORS[k]}"></i>${SECTIONS[k].name}</span><span class="num">${k === "jap" ? `${e.n} × ${fmtDur(e.perPaath)}` : fmtDur(e.bySec[k])}</span></div>`).join("")}</div></details>`;
     const naam = NAMES[(st.dayNo - 1) % 1000];
-    el.innerHTML = `${head}
-      <div class="day-head"><span class="big num">Day ${st.complete ? sk.days : st.dayNo}</span><span class="of">/ ${sk.days}</span>${today}</div>
-      <div class="lamps" aria-label="${st.doneCount} of ${sk.days} days lit">${lamps}</div>
-      ${missBanner}
-      ${st.complete || st.todayDone ? "" : estCard(e, st)}
-      ${startBtn}
-      <div class="stats">
-        <div class="stat"><b class="num">${st.streak}</b><span>Day streak</span></div>
-        <div class="stat"><b class="num">${st.totals.paath}</b><span>Recitations</span></div>
-        <div class="stat"><b class="num">${(st.totals.paath * 1000).toLocaleString("en-IN")}</b><span>Names chanted</span></div>
-      </div>
-      <div class="card naam-card"><h3>Name of the day · ${st.dayNo}</h3><div class="nd">${esc(naam[0])}</div><div class="nr">${esc(naam[1])}</div><div class="nm">${esc(naam[2])}</div></div>
-      <button class="btn btn-ghost btn-block btn-sm" id="b-add">+ Add another sadhana</button>`;
+    const totals = st.totals.paath ? `${st.totals.paath} recitations · ${(st.totals.paath * 1000).toLocaleString("en-IN")} names chanted` : "";
+    el.innerHTML = `<div class="inner">
+      <div class="meta">Lalita Sahasranama Sadhana</div>
+      <div class="day"><b class="num">Day ${st.complete ? sk.days : st.dayNo}</b><span>of ${sk.days}</span></div>
+      <div><p class="line">${line}</p>${sub ? `<p class="quiet" style="margin-top:8px">${sub}</p>` : ""}</div>
+      ${alertHTML}${btn}${inc}
+      <p class="quiet">${totals ? totals + "<br>" : ""}Name of the day: <span class="deva" style="color:#ffe3b0;font-size:19px">${esc(naam[0])}</span>, ${esc(naam[2].replace(/^She who (is |has |was )?/i, "").replace(/^./, (c) => c.toLowerCase()))}</p>
+    </div>`;
     $("#b-start", el)?.addEventListener("click", startSession);
     $("#b-extra", el)?.addEventListener("click", () => startSession({ extra: true }));
     $("#b-restart", el)?.addEventListener("click", () => confirmBox("Restart from Day 1?", "Your earlier progress stays safe in the Journey tab. Day 1 begins today.", "Yes, restart", restartSankalp));
     $("#b-ack", el)?.addEventListener("click", () => { S().ack.push(...st.unack); save(); renderHome(); toast("Okay. Carrying on from today."); });
     $("#b-new", el)?.addEventListener("click", () => restartSankalp(true));
-    $("#b-darshan", el).onclick = openDarshan;
-    $("#b-add", el).onclick = () => toast("Send the next sadhana's vidhi (PDF) and it will be added here.");
   }
-  function estCard(e, st) {
-    const order = Object.keys(SECTIONS).filter((k) => e.bySec[k]);
-    const bar = order.map((k) => `<span style="width:${(e.bySec[k] / e.total) * 100}%;background:${SEC_COLORS[k]}"></span>`).join("");
-    const leg = order.map((k) => `<div><i style="background:${SEC_COLORS[k]}"></i>${SECTIONS[k].name}<span class="m num">${k === "jap" ? `${e.n}×${fmtDur(e.perPaath)}` : fmtDur(e.bySec[k])}</span></div>`).join("");
-    const finish = new Date(Date.now() + e.total * 1000);
-    const latest = st ? new Date(st.windowEnd - e.total * 1000) : null;
-    return `<div class="card"><h3>How long today will take</h3>
-      <div class="est-total"><span class="t num">${fmtDur(e.total)}</span><span class="s">${e.learned ? "based on your recent days" : "estimate · learns from your first day"}</span></div>
-      <div class="stack">${bar}</div><div class="legend">${leg}</div>
-      ${st ? `<div class="meta-row"><span>Start now and finish by <b>${fmtTime(finish)}</b></span><span>Day changes at ${fmtTime(st.windowEnd)} · ${fmtDur(st.windowLeft)} left</span></div>
-      ${latest > new Date() ? `<p class="hint">Start before ${fmtTime(latest)} to protect your streak.</p>` : `<p class="hint" style="color:#ffb9aa">Start now, time is short.</p>`}` : ""}
-    </div>`;
-  }
-  function restartSankalp(keepDetails) {
+  function restartSankalp() {
     const s = S(); const st = status();
     if (s.sankalp) s.history.push({ startKey: s.sankalp.startKey, endKey: todayKey(), days: s.sankalp.days, done: st?.doneCount || 0 });
     if (s.sankalp) s.sankalp = { ...s.sankalp, startKey: todayKey(), created: Date.now() };
@@ -305,13 +276,13 @@
   }
   function confirmBox(title, body, yes, onYes) {
     const o = document.createElement("div"); o.className = "overlay";
-    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>${esc(title)}</h2><p class="hint" style="color:var(--ink-2)">${esc(body)}</p><div class="row"><button class="btn btn-primary" id="c-y">${esc(yes)}</button><button class="btn btn-ghost" id="c-n">Cancel</button></div></div>`;
+    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>${esc(title)}</h2><p class="hint" style="color:var(--ink-2);font-size:16px">${esc(body)}</p><div class="row"><button class="btn btn-primary btn-sm" id="c-y">${esc(yes)}</button><button class="link" id="c-n">Cancel</button></div></div>`;
     document.body.appendChild(o);
     $("#c-n", o).onclick = () => o.remove(); $("#c-y", o).onclick = () => { o.remove(); onYes(); };
   }
 
   // =========================================================
-  // SESSION
+  // SESSION: every step is a few "pages", one thing on screen at a time
   // =========================================================
   let sess = null, steps = [], tick = null, paused = false;
   function startSession(opts = {}) {
@@ -327,9 +298,7 @@
     }
     sess.dayNo = dayNo;
     $("#app").hidden = true; $("#session").hidden = false; paused = false;
-    document.body.classList.toggle("focus-mode", !!state.prefs.focus);
     window.Hut?.layout("side");
-    // reconstruct altar state up to the current step
     const idx = (id) => steps.findIndex((x) => x.id === id);
     const at = sess.prep ? -1 : sess.i;
     window.Hut?.set({ doors: opts.extra || at > idx("dwaar"), lamp: opts.extra || at >= idx("deep"), smoke: opts.extra || at > idx("panchpooja"), yantra: .25, ganesh: 0, instant: true });
@@ -355,13 +324,13 @@
   function updateClock() {
     const t = $("#s-el"); if (!t) return;
     t.textContent = fmtClock(sess.el);
-    $("#s-rem").textContent = sess.prep ? `~${fmtDur(remainingEst())} total` : `~${fmtDur(remainingEst())} left`;
+    $("#s-rem").textContent = `about ${fmtDur(remainingEst())} left`;
     const pt = $("#p-cur"); if (pt) pt.textContent = fmtClock(sess.cur);
   }
   function exitSession() {
     clearInterval(tick); keepAwake(false); setDrone(false);
     if (sess && !sess.extra) { S().session = sess; save(true); }
-    sess = null; $("#session").hidden = true; $("#app").hidden = false; document.body.classList.remove("focus-mode");
+    sess = null; $("#session").hidden = true; $("#app").hidden = false;
     window.Hut?.set({ doors: true, lamp: true, smoke: true, yantra: .25, ganesh: 0 }); window.Hut?.goto("home"); setView("home");
   }
 
@@ -381,116 +350,137 @@
       ${dot(52, 40, k === 4)}${dot(68, 40, k === 4)}${dot(60, 32, k === 4)}
       ${k === 5 || k === 6 ? `<circle cx="60" cy="40" r="32" fill="none" stroke="var(--haldi)" stroke-width="2" stroke-dasharray="${k === 6 ? "4 6" : "60 200"}"><animateTransform attributeName="transform" type="rotate" from="0 60 40" to="360 60 40" dur="${k === 6 ? 6 : 2}s" repeatCount="indefinite"/></circle>` : ""}</svg>`;
   };
-
   function mantraHTML(m) {
     return `<div class="mantra">${m.k ? `<div class="k">${esc(m.k)}</div>` : ""}<div class="d">${esc(m.d)}</div>${state.prefs.showRoman && m.r ? `<div class="r">${esc(rom(m.r))}</div>` : ""}${m.note ? `<div class="note">→ ${esc(m.note)}</div>` : ""}</div>`;
   }
 
+  // Break a step into pages of at most two lines of mantra each
+  function chunk(d, r, n = 2) {
+    const D = d.split("\n"), Rr = r.split("\n"), out = [];
+    for (let i = 0; i < D.length; i += n) out.push({ d: D.slice(i, i + n).join("\n"), r: Rr.slice(i, i + n).join("\n") });
+    return out;
+  }
+  function pagesFor(step) {
+    if (step.mode === "paath") return [{ paath: true }];
+    if (step.mode === "count") return [{ d: step.m[0].d, r: step.m[0].r, counter: "count" }];
+    if (step.mode === "sankalp") {
+      const sk = S().sankalp;
+      const dev = SANKALP.d({ ...sk, days: toDeva(sk.days) }).split("।").map((x) => x.trim()).filter(Boolean).map((x) => x + "।");
+      const en = SANKALP.r(sk).split(/(?<=\.)\s+(?=[A-Z])/);
+      return dev.length === en.length ? dev.map((d, i) => ({ d, en: en[i], long: true })) : [{ d: dev.join("\n"), en: en.join(" "), long: true }];
+    }
+    if (step.mode === "single") {
+      return step.m.flatMap((m) => { const cs = chunk(m.d, m.r); if (m.note) cs[cs.length - 1].how = m.note; return cs; });
+    }
+    // lines
+    const g = step.group || 1;
+    if (g > 1) {
+      const out = [];
+      for (let i = 0; i < step.lines.length; i += g) { const part = step.lines.slice(i, i + g); out.push({ d: part.map((l) => l.d).join("\n"), r: part.map((l) => l.r).join("\n") }); }
+      return out;
+    }
+    return step.lines.flatMap((l, li) => chunk(l.d, l.r).map((c, ci) => ({
+      ...c, k: l.k, how: l.how, fx: ci === 0 ? l.fx : undefined, counter: l.counter ? "tap" : undefined,
+      fig: step.hand ? { t: "hand", f: l.f } : step.id === "angnyas" ? { t: "body", k: li } : undefined
+    })));
+  }
+
   function renderSession(moveCam) {
     const root = $("#session"); const step = steps[sess.i];
-    // progress track by section
+    const pages = sess.prep ? [] : pagesFor(step);
+    if (!sess.prep) sess.li = Math.min(sess.li, pages.length - 1);
+    const page = pages[sess.li];
+    // progress by section
     const secs = Object.keys(SECTIONS).filter((k) => steps.some((s) => s.sec === k));
     const track = secs.map((k) => {
       const list = steps.filter((s) => s.sec === k); const w = list.reduce((a, s) => a + (s.mode === "paath" ? 4 : 1), 0);
-      const doneN = sess.prep ? 0 : list.filter((s) => steps.indexOf(s) < sess.i).reduce((a, s) => a + (s.mode === "paath" ? 4 : 1), 0) + (step && step.sec === k ? (step.mode === "paath" ? 4 * (sess.paaths.length / sess.target) : .5) : 0);
+      const frac = !sess.prep && step ? (step.mode === "paath" ? sess.paaths.length / sess.target : sess.li / Math.max(1, pages.length)) : 0;
+      const doneN = sess.prep ? 0 : list.filter((s) => steps.indexOf(s) < sess.i).reduce((a, s) => a + (s.mode === "paath" ? 4 : 1), 0) + (step && step.sec === k ? (step.mode === "paath" ? 4 : 1) * frac : 0);
       return `<div class="seg-t" style="--w:${w};--p:${Math.min(100, (doneN / w) * 100)}%"><span></span></div>`;
     }).join("");
-    let body = "", nextLabel = "Next", nextDisabled = false, scene = "home";
+
+    let meta, title, cue, cueAction = false, body = "", nextLabel = "Continue", nextDisabled = false, hideFoot = false, scene = "home";
+    const isLastStep = sess.i === steps.length - 1;
     if (sess.prep) {
-      scene = "dawn";
+      scene = "dawn"; meta = `Day ${sess.dayNo}`; title = "Gather your things"; cue = "Tap each item once it is within reach.";
       const checks = sess.checks || (sess.checks = {});
-      body = `<div class="s-head"><div class="eyebrow">Preparation · Day ${sess.dayNo}</div><h2>Is everything ready?</h2></div>
-        <p class="s-do">Keep everything within reach before you begin so you do not have to get up midway. Tap to tick each item.</p>
-        <div class="checks">${SAMAGRI.map(([a, b], i) => `<button class="check ${checks[i] ? "on" : ""}" data-i="${i}"><i></i><div><b>${esc(a)}</b><span>${esc(b)}</span></div></button>`).join("")}</div>
-        <div class="card"><h3>Today's estimate</h3><div class="est-total"><span class="t num">${fmtDur(remainingEst())}</span><span class="s">${steps.length} steps · ${sess.target} recitations</span></div></div>`;
+      body = `<div class="checks">${SAMAGRI.map(([a], i) => `<button class="check ${checks[i] ? "on" : ""}" data-i="${i}"><i></i><b>${esc(a)}</b></button>`).join("")}</div>`;
       nextLabel = "Begin";
     } else {
-      scene = step.scene;
-      const sec = SECTIONS[step.sec];
-      body = `<div class="s-head"><div class="eyebrow"><span>${esc(sec.name)}</span><span style="color:var(--muted)">· Step ${step.n}${step.day1 ? ' · <span class="tag">Day 1 only</span>' : ""}</span></div>
-        <h2>${esc(step.t)} <span class="deva">${esc(step.th)}</span></h2></div>
-        <p class="s-do">${esc(step.do)}</p>`;
-      if (step.mode === "single") {
-        body += (step.m || []).map(mantraHTML).join("");
-      } else if (step.mode === "count") {
-        body += (step.m || []).map(mantraHTML).join("");
-        const pct = Math.min(1, sess.c / step.count), C = 2 * Math.PI * 62;
-        body += `<div class="counter"><button class="tapper" id="tap" aria-label="Count"><svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="62" fill="none" stroke="rgba(244,231,212,.12)" stroke-width="5"/><circle cx="66" cy="66" r="62" fill="none" stroke="var(--haldi)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .3s"/></svg><b class="num">${sess.c}</b><small>/ ${step.count}</small></button><p class="hint how-note">${esc(step.tap || "Tap after each recitation")}</p></div>`;
-      } else if (step.mode === "lines") {
-        const cur = step.lines[sess.li];
-        if (step.hand) body += `<div class="figure">${handSVG(cur.f)}<p>${esc(cur.how)}</p></div>`;
-        else if (step.id === "angnyas") body += `<div class="figure">${bodySVG(sess.li)}<p>${esc(cur.how)}</p></div>`;
-        body += `<div class="lines">${step.lines.map((l, i) => `<button class="ln ${i < sess.li ? "done" : ""} ${i === sess.li ? "cur" : ""}" data-li="${i}">${l.k ? `<span class="k">${esc(l.k)}</span>` : ""}<span class="d">${esc(l.d)}</span>${state.prefs.showRoman ? `<span class="r">${esc(rom(l.r))}</span>` : ""}${l.how && !step.hand && step.id !== "angnyas" ? `<span class="how">${esc(l.how)}</span>` : ""}</button>`).join("")}</div>`;
-        if (cur.counter) body += `<div class="counter"><button class="tapper" id="tap2"><b class="num">${sess.cnt}</b><small>japa</small></button><p class="hint">Count the japa with each mudra. When you are done, press Next.</p></div>`;
-        if (step.note) body += `<p class="hint how-note">${esc(step.note)}</p>`;
-        nextLabel = sess.li < step.lines.length - 1 ? "Next line" : "Next";
-      } else if (step.mode === "sankalp") {
-        const sk = S().sankalp; const d = { ...sk, days: toDeva(sk.days) };
-        body += `<div class="mantra"><div class="k">Sankalpa · Devanagari</div><div class="d" style="font-size:calc(22px * var(--mantra-scale))">${esc(SANKALP.d(d))}</div></div>
-          <div class="mantra"><div class="k">Sankalpa · English</div><div class="r" style="font-style:normal;color:var(--ink)">${esc(SANKALP.r(sk))}</div></div>`;
-      } else if (step.mode === "paath") {
-        body += paathHTML(step);
-        const need = sess.target - sess.paaths.length;
-        nextLabel = need > 0 ? `${need} recitations to go` : "Next";
-        nextDisabled = need > 0;
+      scene = step.scene; meta = `Step ${sess.i + 1} of ${steps.length} · ${SECTIONS[step.sec].name}`; title = step.t;
+      cue = page.how || step.cue || ""; cueAction = !!page.how;
+      if (page.paath) {
+        body = paathHTML(step);
+        const need = sess.target - sess.paaths.length; nextDisabled = need > 0; hideFoot = need > 0; nextLabel = "Continue";
+      } else {
+        const fig = page.fig ? `<div class="figure">${page.fig.t === "hand" ? handSVG(page.fig.f) : bodySVG(page.fig.k)}</div>` : "";
+        const ring = page.counter === "count" ? (() => { const C = 2 * Math.PI * 62; return `<div class="counter"><button class="tapper" id="tap" aria-label="Count"><svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="62" fill="none" stroke="rgba(244,231,212,.12)" stroke-width="5"/><circle cx="66" cy="66" r="62" fill="none" stroke="var(--haldi)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - Math.min(1, sess.c / step.count))}" style="transition:stroke-dashoffset .3s"/></svg><b class="num">${sess.c}</b><small>of ${step.count}</small></button></div>`; })()
+          : page.counter === "tap" ? `<div class="counter"><button class="tapper" id="tap2" aria-label="Count"><b class="num">${sess.cnt}</b><small>japa</small></button></div>` : "";
+        body = `<div class="pg" key="${sess.i}-${sess.li}">${page.k ? `<div class="meta">${esc(page.k)}</div>` : ""}${fig}<div class="d ${page.long ? "long" : ""}">${esc(page.d)}</div>${page.en ? `<div class="en">${esc(page.en)}</div>` : state.prefs.showRoman && page.r ? `<div class="r">${esc(rom(page.r))}</div>` : ""}${ring}</div>`;
+        if (pages.length > 1) body += `<div class="dots" aria-label="Page ${sess.li + 1} of ${pages.length}">${pages.length <= 12 ? pages.map((_, i) => `<i class="${i <= sess.li ? "on" : ""}"></i>`).join("") : `<span class="meta">${sess.li + 1} / ${pages.length}</span>`}</div>`;
       }
-      if (step.bhaav) body += `<div class="bhaav">${EYE}<span>${esc(step.bhaav)}</span></div>`;
-      if (sess.i === steps.length - 1 && (step.mode !== "lines" || sess.li === step.lines.length - 1)) nextLabel = sess.extra ? "Finish" : "Complete sadhana";
+      if (isLastStep && sess.li >= pages.length - 1) nextLabel = sess.extra ? "Finish" : "Complete sadhana";
     }
     root.innerHTML = `
       <div class="s-top">
-        <div class="s-left"><button class="icon-btn" id="s-x" aria-label="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14M16 5v14"/></svg></button>
-          <button class="icon-btn" id="s-focus" aria-label="Mantra only" title="Mantra only">${EYE}</button></div>
-        <div><div class="track">${track}</div><div class="track-lbl">${sess.prep ? "Preparation" : `${esc(SECTIONS[step.sec].name)} · ${steps.indexOf(step) + 1} / ${steps.length}`}</div></div>
-        <div class="s-right"><div class="s-time"><b class="num" id="s-el">${fmtClock(sess.el)}</b><span id="s-rem"></span></div></div>
+        <button class="round" id="s-x" aria-label="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14M16 5v14"/></svg></button>
+        <div class="track" aria-hidden="true">${track}</div>
+        <div class="clock"><b class="num" id="s-el">${fmtClock(sess.el)}</b><span id="s-rem"></span></div>
       </div>
       <button class="darshan" id="s-darshan" aria-label="View Mother Lalita"><img src="${A.lalita}" alt=""></button>
-      <div class="s-panel"><div class="s-scroll" id="s-scroll">${body}</div>
-        <div class="s-foot"><button class="btn btn-ghost" id="s-prev" ${sess.prep ? "disabled" : ""} aria-label="Back">‹</button>
-          <button class="btn ${nextDisabled ? "btn-ghost" : "btn-primary"} btn-next" id="s-next" ${nextDisabled ? "disabled" : ""}>${esc(nextLabel)}</button></div></div>`;
+      <div class="side stage ${!sess.prep && page?.paath ? "is-paath" : ""}"><div class="inner">
+        <div class="meta">${esc(meta)}</div>
+        ${!sess.prep && page?.paath ? "" : `<div><h2>${esc(title)}</h2>${cue ? `<p class="cue ${cueAction ? "action" : ""}" style="margin-top:10px">${esc(cue)}</p>` : ""}</div>`}
+        ${body}
+        ${hideFoot ? "" : `<div class="stage-foot">
+          <button class="round" id="s-prev" ${sess.prep ? "disabled" : ""} aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button class="btn ${nextDisabled ? "btn-ghost" : "btn-primary"} btn-next" id="s-next" ${nextDisabled ? "disabled" : ""}>${esc(nextLabel)}</button>
+          ${sess.prep ? "" : `<button class="round" id="s-info" aria-label="About this step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></button>`}
+        </div>`}
+      </div></div>`;
     updateClock();
     if (moveCam) window.Hut?.goto(scene);
-    // bind
-    $("#s-x").onclick = pauseBox;
-    $("#s-focus").onclick = () => { state.prefs.focus = !state.prefs.focus; document.body.classList.toggle("focus-mode", state.prefs.focus); save(); toast(state.prefs.focus ? "Mantra only" : "Full guidance"); };
-    $("#s-next").onclick = next; $("#s-prev").onclick = prev; $("#s-darshan").onclick = openDarshan;
+    $("#s-x").onclick = pauseBox; if ($("#s-next")) { $("#s-next").onclick = next; $("#s-prev").onclick = prev; } $("#s-darshan").onclick = openDarshan;
+    $("#s-info", root)?.addEventListener("click", () => infoBox(step));
     root.querySelectorAll(".check").forEach((b) => b.onclick = () => { sess.checks[b.dataset.i] = !sess.checks[b.dataset.i]; b.classList.toggle("on"); });
     $("#tap", root)?.addEventListener("click", () => { sess.c++; if (sess.c === 1 && step.id === "dwaar") window.Hut?.set({ doors: true }); if (sess.c >= step.count) bell(); renderSession(false); });
     $("#tap2", root)?.addEventListener("click", () => { sess.cnt++; renderSession(false); });
-    root.querySelectorAll(".ln").forEach((b) => b.onclick = () => { sess.li = +b.dataset.li; sess.cnt = 0; lineFx(step); renderSession(false); });
     bindPaath(root, step);
-    const cur = root.querySelector(".ln.cur"); if (cur) cur.scrollIntoView({ block: "center", behavior: moveCam ? "auto" : "smooth" });
+  }
+  function infoBox(step) {
+    paused = true;
+    const o = document.createElement("div"); o.className = "overlay";
+    o.innerHTML = `<div class="dialog"><h2>${esc(step.t)}</h2><p class="hint" style="font-size:17px;color:var(--ink)">${esc(step.do)}</p><p class="hint" style="font-size:16px;font-style:italic">${esc(step.bhaav)}</p><button class="btn btn-ghost btn-sm" id="i-x">Close</button></div>`;
+    document.body.appendChild(o); const close = () => { paused = false; o.remove(); };
+    $("#i-x", o).onclick = close; o.addEventListener("click", (e) => { if (e.target === o) close(); });
   }
 
-  // ----- paath (malamantra) -----
+  // ----- the full stotram -----
   const PAGE = 8, PAGES = Math.ceil(1000 / PAGE);
   function paathHTML(step) {
     const n = sess.paaths.length, tgt = sess.target, mode = state.prefs.paathMode;
-    let h = `<div class="paath-head"><div class="paath-n num">${Math.min(n + 1, Math.max(tgt, n + 1))}<small> / ${tgt} recitations</small></div>
-      <div class="ptimer"><b class="num" id="p-cur">${fmtClock(sess.cur)}</b><span>this recitation · avg ${fmtDur(paathSec())}</span></div></div>
-      <div class="pdots">${Array.from({ length: Math.max(tgt, n) }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("")}</div>
-      <div class="seg" id="p-mode"><button class="${mode === "naam" ? "on" : ""}" data-m="naam">Read the names here</button><button class="${mode === "book" ? "on" : ""}" data-m="book">From my own book</button></div>`;
+    let h = `<div class="rec"><div><b class="num">${Math.min(n + 1, Math.max(tgt, n + 1))}</b> <span>of ${tgt} recitations</span></div><span>this one <b class="num" id="p-cur" style="font-size:inherit;font-weight:600;color:var(--ink)">${fmtClock(sess.cur)}</b> · average ${fmtDur(paathSec())}</span></div>`;
     if (mode === "naam") {
       const p = sess.page; const from = p * PAGE;
       h += `<div class="pbar"><span style="width:${((p + 1) / PAGES) * 100}%"></span></div>`;
-      if (p === 0) h += mantraHTML(step.m[0]);
+      if (p === 0) h += `<div class="pg"><div class="d long" style="font-size:24px">${esc(step.m[0].d)}</div></div>`;
       h += `<div class="names-page">${NAMES.slice(from, from + PAGE).map((x, i) => `<div><span class="i num">${from + i + 1}</span><span class="d">${esc(x[0])}</span>${state.prefs.showRoman ? `<span class="r">${esc(x[1])}</span>` : ""}</div>`).join("")}</div>`;
-      if (p === PAGES - 1) h += mantraHTML(step.end);
-      h += `<div class="pnav"><button class="btn btn-ghost btn-sm" id="p-prev" ${p === 0 ? "disabled" : ""}>‹ Back</button><span class="lbl num">${from + 1}–${Math.min(1000, from + PAGE)} / 1000</span>
-        ${p < PAGES - 1 ? `<button class="btn btn-gold btn-sm" id="p-next">Next ›</button>` : `<button class="btn btn-gold btn-sm" id="p-done">Recitation complete</button>`}</div>
-        <p class="hint how-note">The names are shown one by one (as the namavali). To read the stotram in verse form, choose "From my own book".</p>`;
+      if (p === PAGES - 1) h += `<div class="pg"><div class="d long">${esc(step.end.d)}</div></div>`;
+      h += `<div class="pnav"><button class="round" id="p-prev" ${p === 0 ? "disabled" : ""} aria-label="Previous names"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button><span class="lbl num">${from + 1} to ${Math.min(1000, from + PAGE)} of 1000</span>
+        ${p < PAGES - 1 ? `<button class="btn btn-gold btn-sm" id="p-next">Next names</button>` : `<button class="btn btn-gold btn-sm" id="p-done">Recitation complete</button>`}</div>
+        <button class="link" id="p-switch">Reading from your own book instead</button>`;
     } else {
-      h += `<div class="book"><div class="deva">॥ श्रीललितासहस्रनामस्तोत्रम् ॥</div><p class="hint">Read the full stotram from your own book. The timer is running. Press the button below when you finish.</p>
-        <button class="btn btn-gold" id="p-done">Recitation ${n + 1} complete</button></div>`;
+      h += `<div class="pg"><div class="d">॥ श्रीललितासहस्रनामस्तोत्रम् ॥</div><p class="quiet">Read the full stotram from your own book. The timer keeps running.</p></div>
+        <button class="btn btn-gold" id="p-done">Recitation ${n + 1} complete</button><button class="link" id="p-switch">Show the names here instead</button>`;
     }
-    if (n >= tgt) h += `<button class="btn btn-ghost btn-sm" id="p-more">+ One more recitation (beyond your sankalpa)</button>`;
+    if (n >= tgt) h += `<button class="link" id="p-more">One more recitation</button>`;
     return h;
   }
   function bindPaath(root, step) {
     if (!step || step.mode !== "paath") return;
-    root.querySelectorAll("#p-mode button").forEach((b) => b.onclick = () => { state.prefs.paathMode = b.dataset.m; save(); renderSession(false); });
-    $("#p-prev", root)?.addEventListener("click", () => { sess.page = Math.max(0, sess.page - 1); renderSession(false); $("#s-scroll").scrollTop = 0; });
-    $("#p-next", root)?.addEventListener("click", () => { sess.page++; if (sess.page % 25 === 0) window.Hut?.fx("petals"); renderSession(false); $("#s-scroll").scrollTop = 0; });
+    $("#p-switch", root)?.addEventListener("click", () => { state.prefs.paathMode = state.prefs.paathMode === "naam" ? "book" : "naam"; save(); renderSession(false); });
+    $("#p-prev", root)?.addEventListener("click", () => { sess.page = Math.max(0, sess.page - 1); renderSession(false); root.querySelector(".side").scrollTop = 0; });
+    $("#p-next", root)?.addEventListener("click", () => { sess.page++; if (sess.page % 25 === 0) window.Hut?.fx("petals"); renderSession(false); root.querySelector(".side").scrollTop = 0; });
     $("#p-done", root)?.addEventListener("click", finishPaath);
     $("#p-more", root)?.addEventListener("click", () => { sess.target++; renderSession(false); });
   }
@@ -498,12 +488,11 @@
     sess.paaths.push(sess.cur); sess.cur = 0; sess.page = 0; bell(); window.Hut?.fx("petals");
     const left = sess.target - sess.paaths.length;
     toast(left > 0 ? `Recitation ${sess.paaths.length} complete. ${left} to go.` : "All recitations complete. Jai Maa Lalita.");
-    if (!sess.extra) save(); renderSession(false); $("#s-scroll").scrollTop = 0;
+    if (!sess.extra) save(); renderSession(false); $("#session .side").scrollTop = 0;
   }
 
-  function lineFx(step) {
-    const l = step.lines?.[sess.li]; if (!l) return;
-    if (l.fx) window.Hut?.fx(l.fx);
+  function pageFx(step, page) {
+    if (page?.fx) window.Hut?.fx(page.fx);
     if (step.id === "ganapati") window.Hut?.set({ ganesh: 1 });
   }
   function enterStep() {
@@ -513,29 +502,30 @@
     if (step.id === "shuddhikaran" || step.id === "sankalp") setTimeout(() => window.Hut?.fx("water"), 600);
     if (step.id === "samarpan") window.Hut?.fx("petals");
     if (step.id === "kshama") window.Hut?.fx("shower");
-    if (step.mode === "lines") lineFx(step);
+    pageFx(step, pagesFor(step)[0]);
   }
+  const scrollTop = () => { const sd = $("#session .side"); if (sd) sd.scrollTop = 0; };
   function next() {
     ac();
-    if (sess.prep) { sess.prep = false; sess.i = 0; bell(); enterStep(); renderSession(true); $("#s-scroll").scrollTop = 0; return; }
-    const step = steps[sess.i];
-    if (step.mode === "lines" && sess.li < step.lines.length - 1) { sess.li++; sess.cnt = 0; lineFx(step); renderSession(false); return; }
+    if (sess.prep) { sess.prep = false; sess.i = 0; bell(); enterStep(); renderSession(true); scrollTop(); return; }
+    const step = steps[sess.i]; const pages = pagesFor(step);
+    if (sess.li < pages.length - 1) { sess.li++; sess.cnt = 0; pageFx(step, pages[sess.li]); renderSession(false); scrollTop(); return; }
     if (step.id === "dwaar") window.Hut?.set({ doors: true });
     if (step.id === "panchpooja") window.Hut?.set({ smoke: true });
     if (sess.i >= steps.length - 1) return complete();
-    sess.i++; bell(); enterStep(); if (!sess.extra) save(); renderSession(true); $("#s-scroll").scrollTop = 0;
+    sess.i++; bell(); enterStep(); if (!sess.extra) save(); renderSession(true); scrollTop();
   }
   function prev() {
-    const step = steps[sess.i];
-    if (step.mode === "lines" && sess.li > 0) { sess.li--; renderSession(false); return; }
+    if (sess.prep) return;
+    if (sess.li > 0) { sess.li--; renderSession(false); return; }
     if (sess.i === 0) { sess.prep = true; renderSession(true); return; }
-    sess.i--; const p = steps[sess.i]; sess.li = p.mode === "lines" ? p.lines.length - 1 : 0; renderSession(true);
+    sess.i--; sess.li = pagesFor(steps[sess.i]).length - 1; renderSession(true);
   }
   function pauseBox() {
     paused = true;
     const o = document.createElement("div"); o.className = "overlay";
-    o.innerHTML = `<div class="dialog"><h2>Paused</h2><p class="hint" style="color:var(--ink-2)">The timer is paused. You can come back and resume from this exact step, as long as it is before today ends (${fmtTime(status().windowEnd)}).</p>
-      <div class="row"><button class="btn btn-primary" id="pz-go">Resume</button><button class="btn btn-ghost" id="pz-x">Save and exit</button></div></div>`;
+    o.innerHTML = `<div class="dialog"><h2>Paused</h2><p class="hint" style="color:var(--ink-2);font-size:16px">The timer is paused. You can resume from this exact step before today ends (${fmtTime(status().windowEnd)}).</p>
+      <div class="row"><button class="btn btn-primary btn-sm" id="pz-go">Resume</button><button class="link" id="pz-x">Save and exit</button></div></div>`;
     document.body.appendChild(o);
     $("#pz-go", o).onclick = () => { paused = false; o.remove(); };
     $("#pz-x", o).onclick = () => { paused = false; o.remove(); exitSession(); };
@@ -554,19 +544,20 @@
     window.Hut?.lightNewDay(s.sankalp.days, st.doneCount); window.Hut?.fx("shower"); window.Hut?.goto("offer-all"); bell(); setTimeout(bell, 900);
     const naam = NAMES[(sess.dayNo - 1) % 1000];
     const o = document.createElement("div"); o.className = "overlay";
-    o.innerHTML = `<div class="dialog"><div class="done-hero"><div class="deva">श्री जगदम्बा अर्पणमस्तु</div>
-      <div class="big num">${sess.extra ? "+" + sess.paaths.length + (sess.paaths.length === 1 ? " recitation" : " recitations") : `Day ${sess.dayNo} / ${s.sankalp.days}`}</div><div style="color:var(--ink-2)">${sess.extra ? "Extra recitation added" : "Complete. Another lamp is lit."}</div></div>
-      <div class="stats"><div class="stat"><b class="num">${fmtDur(sess.el)}</b><span>Time</span></div><div class="stat"><b class="num">${sess.paaths.length}</b><span>Recitations</span></div><div class="stat"><b class="num">${st.streak}</b><span>Day streak</span></div></div>
-      ${newMedals.length ? `<div class="card"><h3>New milestone</h3><div style="font-size:20px;color:#ffe3b0">${newMedals.map(esc).join(" · ")}</div></div>` : ""}
-      ${sess.extra ? "" : `<div class="card naam-card"><h3>Name of the day: keep it in mind all day</h3><div class="nd">${esc(naam[0])}</div><div class="nm">${esc(naam[2])}</div></div>`}
-      <button class="btn btn-gold btn-block" id="d-ok">Pranam</button></div>`;
+    o.innerHTML = `<div class="dialog" style="align-items:center;text-align:center"><div class="deva" style="font-size:26px;color:var(--haldi)">श्री जगदम्बा अर्पणमस्तु</div>
+      <div class="done-hero"><div class="big num">${sess.extra ? "+" + sess.paaths.length + (sess.paaths.length === 1 ? " recitation" : " recitations") : `Day ${sess.dayNo} complete`}</div></div>
+      <p class="line" style="max-width:none">${fmtDur(sess.el)} · ${sess.paaths.length} ${sess.paaths.length === 1 ? "recitation" : "recitations"}${st.streak > 1 ? ` · ${st.streak} days in a row` : ""}</p>
+      ${newMedals.length ? `<p class="line" style="color:#ffe3b0;max-width:none">New milestone: ${newMedals.map(esc).join(", ")}</p>` : ""}
+      ${sess.extra ? "" : `<p class="quiet">Keep today's name in mind:<br><span class="deva" style="font-size:24px;color:#ffe3b0">${esc(naam[0])}</span></p>`}
+      <button class="btn btn-gold" id="d-ok">Pranam</button></div>`;
     document.body.appendChild(o);
-    $("#d-ok", o).onclick = () => { o.remove(); sess = null; $("#session").hidden = true; $("#app").hidden = false; document.body.classList.remove("focus-mode"); window.Hut?.goto("home"); setView("home"); };
+    $("#d-ok", o).onclick = () => { o.remove(); sess = null; $("#session").hidden = true; $("#app").hidden = false; window.Hut?.goto("home"); setView("home"); };
   }
   document.addEventListener("keydown", (e) => {
     if (!sess || $(".overlay")) return; if (/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) return;
-    if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); const step = steps[sess.i]; if (!sess.prep && step.mode === "paath") { state.prefs.paathMode === "naam" && sess.page < PAGES - 1 ? $("#p-next")?.click() : null; } else if (!$("#s-next").disabled) next(); }
-    if (e.key === "ArrowLeft") { const step = steps[sess.i]; if (!sess.prep && step.mode === "paath") $("#p-prev")?.click(); else prev(); }
+    const step = steps[sess.i];
+    if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); if (!sess.prep && step.mode === "paath") { if (state.prefs.paathMode === "naam" && sess.page < PAGES - 1) $("#p-next")?.click(); } else if ($("#s-next") && !$("#s-next").disabled) next(); }
+    if (e.key === "ArrowLeft") { if (!sess.prep && step.mode === "paath") $("#p-prev")?.click(); else prev(); }
   });
 
   // =========================================================
@@ -575,7 +566,7 @@
   function renderVidhi() {
     const sk = S().sankalp || {};
     let h = `<div><div class="eyebrow">Inspired by Shri Om Swami</div><h1>Shri Lalita Sahasranama Malamantra Japavidhi</h1></div>
-      <p class="lead">All 21 steps from your PDF, in English. The mantras are kept in Sanskrit exactly as written in the PDF (Devanagari), with a Roman transliteration beneath. In the Malamantra (step 19) the complete Sahasranama stotram is recited at least five times.</p>
+      <p class="lead">All 21 steps from your PDF. Instructions are in English; mantras stay in Sanskrit, exactly as written, with a Roman transliteration beneath.</p>
       <div class="sec-h"><h2>What you need</h2><span class="deva">सामग्री</span></div><div class="samagri">${SAMAGRI.map(([a, b]) => `<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>`;
     for (const [k, sec] of Object.entries(SECTIONS)) {
       const list = STEPS.filter((s) => s.sec === k);
@@ -587,7 +578,7 @@
         if (s.mode === "sankalp") ms += mantraHTML({ k: "Sankalpa", d: SANKALP.d({ ...sk, days: sk.days ? toDeva(sk.days) : "" }), r: "" }) + `<p class="hint">${esc(SANKALP.r(sk))}</p>`;
         if (s.end) ms += mantraHTML({ k: "Closing of the stotram", d: s.end.d, r: s.end.r });
         h += `<article class="vstep"><div class="no">${toDeva(s.n)}</div><div class="body"><h3>${esc(s.t)} <span class="deva">${esc(s.th)}</span>${s.day1 ? '<span class="tag">Day 1 only</span>' : ""}</h3>
-          <p>${esc(s.do)}</p>${ms}${s.note ? `<p class="hint">${esc(s.note)}</p>` : ""}<div class="bhaav">${EYE}<span>${esc(s.bhaav)}</span></div></div></article>`;
+          <p>${esc(s.do)}</p>${ms}${s.note ? `<p class="hint">${esc(s.note)}</p>` : ""}</div></article>`;
       }
     }
     h += `<p class="hint">The three Ganesha mudras of step 8 are in a photo on page 3 of the PDF. The photo is not clear enough to read, so they are not described here. In steps 16 and 17 the way of touching the fingers and body parts is added from the traditional method; the PDF gives only the mantras.</p>`;
@@ -693,10 +684,11 @@
   // ---------- boot ----------
   document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => setView(b.dataset.v));
   $("#b-settings").onclick = openSettings;
+  $("#h-darshan img").src = A.lalita; $("#h-darshan").onclick = openDarshan;
   if (EMBED) { const x = $("#b-exit"); x.hidden = false; x.onclick = () => window.parent.postMessage({ type: "lalita:exit" }, location.origin); }
   // a session left over from an earlier day becomes a partial log
   { const s = S(); if (s.session && s.session.key !== todayKey() && s.sankalp) { if (!s.logs[s.session.key]) s.logs[s.session.key] = { status: "partial", steps: s.session.st, paaths: s.session.paaths, total: s.session.el, start: s.session.started }; s.session = null; save(); } }
   applyPrefs(); renderSync(); setView(location.hash === "#vidhi" ? "vidhi" : location.hash === "#naam" ? "naam" : location.hash === "#yatra" ? "yatra" : "home");
-  setInterval(() => { if (!sess && view === "home") renderHome(); }, 60000);
+  setInterval(() => { if (!sess && view === "home" && S().sankalp) renderHome(); }, 60000);
   initCloud();
 })();

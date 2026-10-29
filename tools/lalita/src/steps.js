@@ -40,6 +40,7 @@ const SECTIONS = {
 const STEPS = [
   {
     "id": "snaan",
+    "cue": "Bathe while reciting this mantra.",
     "n": 1,
     "sec": "shuddhi",
     "t": "Bath",
@@ -58,6 +59,7 @@ const STEPS = [
   },
   {
     "id": "vastra",
+    "cue": "Put on red clothes.",
     "n": 2,
     "sec": "shuddhi",
     "t": "Red clothes",
@@ -71,6 +73,7 @@ const STEPS = [
   },
   {
     "id": "dwaar",
+    "cue": "Open the doors and say it three times. Tap your right toe with each.",
     "n": 3,
     "sec": "shuddhi",
     "t": "Opening the shrine",
@@ -91,6 +94,7 @@ const STEPS = [
   },
   {
     "id": "aasan",
+    "cue": "Sit on the red asana, spine upright.",
     "n": 4,
     "sec": "shuddhi",
     "t": "Taking your seat",
@@ -104,6 +108,7 @@ const STEPS = [
   },
   {
     "id": "shuddhikaran",
+    "cue": "Water in your right palm. Recite, then sprinkle it over your head.",
     "n": 5,
     "sec": "shuddhi",
     "t": "Purification",
@@ -122,6 +127,7 @@ const STEPS = [
   },
   {
     "id": "aachaman",
+    "cue": "Water in your right palm. Sip after the first, wash your hands after the second.",
     "n": 6,
     "sec": "shuddhi",
     "t": "Aachamana (sipping water)",
@@ -146,6 +152,7 @@ const STEPS = [
   },
   {
     "id": "deep",
+    "cue": "Light the lamp as you recite.",
     "n": 7,
     "sec": "aavahan",
     "t": "Lighting the lamp",
@@ -164,6 +171,7 @@ const STEPS = [
   },
   {
     "id": "ganapati",
+    "cue": "Invoke Ganesha, one part at a time.",
     "n": 8,
     "sec": "aavahan",
     "t": "Invoking Mahaganapati",
@@ -200,6 +208,8 @@ const STEPS = [
   },
   {
     "id": "devta",
+    "cue": "Fold your hands and bow with each line.",
+    "group": 3,
     "n": 9,
     "sec": "aavahan",
     "t": "Salutations to the deities",
@@ -274,6 +284,7 @@ const STEPS = [
   },
   {
     "id": "swasti",
+    "cue": "Recite for peace and wellbeing.",
     "n": 10,
     "sec": "aavahan",
     "t": "Swasti Vachana",
@@ -292,6 +303,7 @@ const STEPS = [
   },
   {
     "id": "guru",
+    "cue": "Remember your guru, or picture Dakshinamurti.",
     "n": 11,
     "sec": "aavahan",
     "t": "Remembering the guru",
@@ -310,6 +322,7 @@ const STEPS = [
   },
   {
     "id": "siddh",
+    "cue": "Bow to the realised teachers.",
     "n": 12,
     "sec": "aavahan",
     "t": "Salutation to the siddhas",
@@ -328,6 +341,7 @@ const STEPS = [
   },
   {
     "id": "prithvi",
+    "cue": "Chant first, then recite the Earth mantra.",
     "n": 13,
     "sec": "aavahan",
     "t": "Worship of the Earth",
@@ -354,6 +368,7 @@ const STEPS = [
   },
   {
     "id": "sankalp",
+    "cue": "Water in your right palm. Say it in your own words.",
     "n": 14,
     "sec": "nyas",
     "t": "Sankalpa (the vow)",
@@ -367,6 +382,7 @@ const STEPS = [
   },
   {
     "id": "viniyog",
+    "cue": "Water in your right palm.",
     "n": 15,
     "sec": "nyas",
     "t": "Mantra viniyoga",
@@ -385,6 +401,7 @@ const STEPS = [
   },
   {
     "id": "karnyas",
+    "cue": "Touch each finger as shown.",
     "n": 16,
     "sec": "nyas",
     "t": "Kara nyasa (fingers)",
@@ -436,6 +453,7 @@ const STEPS = [
   },
   {
     "id": "angnyas",
+    "cue": "Touch each part as shown.",
     "n": 17,
     "sec": "nyas",
     "t": "Anga nyasa (body)",
@@ -486,6 +504,7 @@ const STEPS = [
   },
   {
     "id": "panchpooja",
+    "cue": "Offer each one in turn.",
     "n": 18,
     "sec": "pooja",
     "t": "Panch Pooja (five offerings)",
@@ -542,6 +561,7 @@ const STEPS = [
   },
   {
     "id": "paath",
+    "cue": "Recite the full stotram.",
     "n": 19,
     "sec": "jap",
     "t": "Malamantra japa",
@@ -564,6 +584,7 @@ const STEPS = [
   },
   {
     "id": "samarpan",
+    "cue": "Offer your japa to the Mother.",
     "n": 20,
     "sec": "samarpan",
     "t": "Dedicating the japa",
@@ -582,6 +603,7 @@ const STEPS = [
   },
   {
     "id": "kshama",
+    "cue": "Ask forgiveness, then close.",
     "n": 21,
     "sec": "samarpan",
     "t": "Asking forgiveness",
