@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { Component, useCallback, useEffect, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
@@ -12,15 +12,11 @@ import { canAccessSadhana } from "@/lib/featureFlags";
  * It talks to this page with postMessage; this page reads and writes the user's
  * saved progress in Convex.
  */
-export default function LalitaSadhanaPage() {
+function SyncedFrame() {
   const { authUser } = useAuth();
   const router = useRouter();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const readyRef = useRef(false);
-
-  useEffect(() => {
-    if (authUser && !canAccessSadhana(authUser.email)) router.replace("/dashboard");
-  }, [authUser, router]);
 
   const user = useQuery(
     api.users.getMe,
@@ -84,5 +80,50 @@ export default function LalitaSadhanaPage() {
       allow="fullscreen"
       className="fixed inset-0 z-[60] h-full w-full border-0 bg-[#120b0e]"
     />
+  );
+}
+
+/** The sadhana without cloud sync: progress stays in this browser. */
+function LocalFrame() {
+  return (
+    <iframe
+      src="/lalita/index.html"
+      title="Lalita Sahasranama Sadhana"
+      allow="fullscreen"
+      className="fixed inset-0 z-[60] h-full w-full border-0 bg-[#120b0e]"
+    />
+  );
+}
+
+/**
+ * If the Convex backend does not have the lalita functions yet (for example the
+ * production deployment has not been updated), the query throws while rendering.
+ * Catch that and fall back to the local-only sadhana instead of crashing the page.
+ */
+class SyncBoundary extends Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn("Lalita sync unavailable, running on this device only:", error);
+  }
+  render() {
+    return this.state.failed ? <LocalFrame /> : this.props.children;
+  }
+}
+
+export default function LalitaSadhanaPage() {
+  const { authUser } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (authUser && !canAccessSadhana(authUser.email)) router.replace("/dashboard");
+  }, [authUser, router]);
+
+  return (
+    <SyncBoundary>
+      <SyncedFrame />
+    </SyncBoundary>
   );
 }
