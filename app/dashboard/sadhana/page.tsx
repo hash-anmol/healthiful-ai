@@ -196,6 +196,33 @@ export default function SadhanaPage() {
         </div>
       </motion.div>
 
+      {/* ═══ Lalita Sahasranama Sadhana ═══ */}
+      <Link
+        href="/dashboard/sadhana/lalita"
+        className="group flex items-center gap-4 rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-sm active:scale-[0.99] transition-transform"
+      >
+        <span className="relative h-20 w-16 shrink-0 overflow-hidden rounded-t-full rounded-b-xl border-2 border-amber-400/70 shadow-md">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/lalita/lalita.jpg"
+            alt="Mother Lalita Tripura Sundari"
+            className="h-full w-full object-cover object-[50%_22%]"
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6B00]/70">
+            Guided sadhana
+          </span>
+          <span className="block text-lg font-bold leading-tight text-slate-900">
+            Lalita Sahasranama
+          </span>
+          <span className="block text-xs text-slate-500">
+            Step-by-step vidhi, 3D altar, daily timer and streak
+          </span>
+        </span>
+        <ChevronRight size={20} className="shrink-0 text-slate-300 group-hover:text-[#FF6B00]" />
+      </Link>
+
       {/* ═══ Breadcrumb Tabs ═══ */}
       <motion.div
         initial={{ opacity: 0 }}
