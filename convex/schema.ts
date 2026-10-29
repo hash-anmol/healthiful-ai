@@ -147,4 +147,11 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_date", ["userId", "date"]),
+
+  // Lalita Sahasranama sadhana: whole app state kept as one JSON string per user
+  lalitaSadhana: defineTable({
+    userId: v.id("users"),
+    state: v.string(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 });
