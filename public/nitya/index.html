@@ -621,7 +621,7 @@ details.tonight[open] summary::after { content: "–"; }
       say: "Let the breath flow on its own. Bring your awareness to Svadhishthana, just below the navel, and silently repeat your mantra there." }
   };
   const ORDER = ["om", "belly", "sama", "nadi", "med"];
-  const PREP = 7; // seconds at the start of a paced phase to hear the instruction and settle
+  const PREP = 13; // seconds at the start of a paced phase to hear the spoken instruction (up to ~12 s) before the first breath
 
   // ---------- state ----------
   const LS = "nitya-sadhana-v1";
@@ -764,8 +764,35 @@ details.tonight[open] summary::after { content: "–"; }
     return vs.find((v) => /en-IN/i.test(v.lang)) || vs.find((v) => /en-GB/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
   }
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); };
-  function say(text) {
-    if (!state.prefs.voice || !window.speechSynthesis) return;
+  // Recorded guidance (assets/voice/<id>.mp3, made with tools/nitya/generate_voice.py)
+  const voiceLoads = {}; let voiceSrc = null, voiceToken = 0;
+  function voiceLoad(id) {
+    if (!voiceLoads[id]) voiceLoads[id] = (async () => {
+      try { const r = await fetch(`/nitya/voice/${id}.mp3`); if (!r.ok || !ac()) return null; return await AC.decodeAudioData(await r.arrayBuffer()); } catch (e) { return null; }
+    })();
+    return voiceLoads[id];
+  }
+  function stopVoice() {
+    voiceToken++;
+    if (voiceSrc) { try { voiceSrc.stop(); } catch (e) {} voiceSrc = null; }
+    try { window.speechSynthesis?.cancel(); } catch (e) {}
+  }
+  function say(text, id) {
+    stopVoice();
+    if (!state.prefs.voice) return;
+    const token = voiceToken;
+    (id ? voiceLoad(id) : Promise.resolve(null)).then((buf) => {
+      if (token !== voiceToken) return; // the practice moved on while the clip was loading
+      if (buf && ac()) {
+        const s = AC.createBufferSource(), g = AC.createGain(), r = AC.createGain();
+        s.buffer = buf; g.gain.value = 1; r.gain.value = .14; s.connect(g); g.connect(master); g.connect(r); r.connect(verb);
+        s.onended = () => { if (voiceSrc === s) voiceSrc = null; };
+        voiceSrc = s; s.start();
+      } else speakFallback(text);
+    });
+  }
+  function speakFallback(text) {
+    if (!window.speechSynthesis) return;
     try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = .86; u.pitch = .95; voice = voice || pickVoice(); if (voice) u.voice = voice; speechSynthesis.speak(u); } catch (e) {}
   }
 
@@ -873,6 +900,7 @@ details.tonight[open] summary::after { content: "–"; }
   }
   function begin() {
     ac(); // unlock audio inside the tap
+    ORDER.forEach(voiceLoad); voiceLoad("done");
     const plan = activePhases().map(buildPhase); let t0 = 0; plan.forEach((p) => { p.t0 = t0; t0 += p.dur; });
     sess = { plan, total: t0, acc: 0, runStart: performance.now(), paused: false, pi: -1, si: -1, ci: 0, startedAt: Date.now(), dimmed: false, lastTouch: 0 };
     setDrone(state.prefs.drone); setNature(state.prefs.nature); keepAwake(true);
@@ -901,7 +929,7 @@ details.tonight[open] summary::after { content: "–"; }
     $("#s-pause").onclick = togglePause;
     $("#s-skip")?.addEventListener("click", () => skipTo(i + 1));
     if (i > 0) chime(1, 784, 0, .12);
-    say(ph.say);
+    say(ph.say, p.id);
     if (p.kind !== "sit") window.Scene?.breath(0);
     if (p.kind === "sit") { window.Scene?.breath(.5); sess.lastTouch = performance.now(); }
   }
@@ -944,15 +972,16 @@ details.tonight[open] summary::after { content: "–"; }
     if (!sess) return;
     if (sess.paused) { sess.paused = false; sess.runStart = performance.now(); sess.si = -1; $("#s-pause").textContent = "Pause"; setDrone(state.prefs.drone); }
     else {
-      sess.acc = elapsed(); sess.paused = true; stopTone(); window.speechSynthesis?.cancel();
+      sess.acc = elapsed(); sess.paused = true; stopTone(); stopVoice();
       const ring = $("#p-ring"); if (ring) { ring.style.transform = getComputedStyle(ring).transform; ring.style.transition = "none"; }
       $("#s-pause").textContent = "Resume"; if ($("#p-word")) $("#p-word").textContent = "Paused";
     }
   }
   function skipTo(i) { if (!sess || !sess.plan[i]) return; sess.acc = sess.plan[i].t0; sess.runStart = performance.now(); sess.paused = false; stopTone(); tick(); }
   function stopSession() {
-    clearInterval(tickT); tickT = null; stopTone(); window.speechSynthesis?.cancel(); setDrone(false); setNature(false); keepAwake(false);
+    clearInterval(tickT); tickT = null; stopTone(); stopVoice(); setDrone(false); setNature(false); keepAwake(false);
     $("#session").hidden = true; $("#session").innerHTML = ""; $("#dim").hidden = true; $("#app").hidden = false;
+    sess = null;
   }
   function record(full) {
     const k = todayKey(), e = Math.round(elapsed());
@@ -964,7 +993,7 @@ details.tonight[open] summary::after { content: "–"; }
   function finish() {
     clearInterval(tickT); tickT = null; stopTone(); $("#dim").hidden = true;
     window.Scene?.setDawn(1); window.Scene?.breath(.6);
-    chime(3);
+    chime(3); setTimeout(() => { if (sess) say("Complete. Sit for a moment. Let the mantra settle, and offer this practice at your guru's feet.", "done"); }, 2500);
     $("#s-stage").innerHTML = `<h2 class="ph-name"><small>Complete</small>Sit for a moment</h2>
       <p class="cue">Let the mantra settle. Offer the practice at your guru's feet.</p>
       <div class="s-foot"><button class="btn btn-primary" id="s-done">Complete tonight</button></div>`;
