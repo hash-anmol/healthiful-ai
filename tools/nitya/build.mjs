@@ -10,6 +10,9 @@ const HEALTHIFUL = process.env.HEALTHIFUL_DIR || path.join(root, "../..");
 const out = path.join(HEALTHIFUL, "public/nitya");
 fs.mkdirSync(out, { recursive: true });
 for (const f of ["yantra.jpg", "guru.jpg", "three.min.js"]) fs.copyFileSync(path.join(root, "assets", f), path.join(out, f));
+// spoken guidance (made with generate_voice.py)
+fs.mkdirSync(path.join(out, "voice"), { recursive: true });
+for (const f of fs.readdirSync(path.join(root, "assets/voice")).filter((x) => x.endsWith(".mp3"))) fs.copyFileSync(path.join(root, "assets/voice", f), path.join(out, "voice", f));
 const body = R("src/shell.html")
   .replace("/*__CSS__*/", () => R("src/app.css"))
   .replace("/*__ASSETS__*/", () => JSON.stringify({ yantra: "/nitya/yantra.jpg", guru: "/nitya/guru.jpg" }))
