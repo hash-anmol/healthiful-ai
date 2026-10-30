@@ -1,17 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Noto_Sans_Devanagari } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+// Bundled (SIL Open Font License) instead of next/font/google, so builds do not depend on fetching from Google Fonts.
+const plusJakarta = localFont({
   variable: "--font-plus-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  src: "./fonts/plus-jakarta-sans-latin-wght-normal.woff2",
+  weight: "200 800",
+  style: "normal",
+  display: "swap",
 });
 
-const notoDevanagari = Noto_Sans_Devanagari({
+const notoDevanagari = localFont({
   variable: "--font-noto-devanagari",
-  subsets: ["devanagari"],
-  weight: ["400", "600", "700"],
+  src: "./fonts/noto-sans-devanagari-devanagari-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
 });
 
 import ConvexClientProvider from "./ConvexClientProvider";
