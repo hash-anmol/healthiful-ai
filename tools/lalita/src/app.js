@@ -78,7 +78,7 @@
       syncMode = "cloud"; renderSync();
     } catch (e) { syncMode = "local"; renderSync(); }
   }
-  function renderSync() { const el = $("#sync"); el.className = "sync " + syncMode; el.innerHTML = `<i></i>${syncMode === "cloud" ? "Synced" : "On this device"}`; }
+  function renderSync() { /* sync state is explained in Settings > Backup; no badge on screen */ }
 
   // ---------- estimates ----------
   const stepsForDay = (dayNo) => STEPS.filter((s) => !s.day1 || dayNo === 1);
@@ -185,7 +185,7 @@
     view = v;
     ["home", "vidhi", "naam", "yatra"].forEach((k) => ($("#v-" + k).hidden = k !== v));
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
-    window.Hut?.layout(v === "home" ? "side" : "full");
+    window.Hut?.layout("side"); window.Hut?.rest(v !== "home");
     if (v === "vidhi") renderVidhi(); if (v === "naam") renderNaam(); if (v === "yatra") renderYatra(); if (v === "home") renderHome();
   }
 
@@ -204,7 +204,7 @@
     } else if (setup.step === 1) {
       body = `<h2 class="q">How many recitations each day?</h2>
         <div class="stepper"><button class="round" id="f-minus" aria-label="Fewer">–</button><b class="num">${setup.n}</b><button class="round" id="f-plus" aria-label="More">+</button></div>
-        <p class="line">About <b>${fmtDur(estimateFor(setup.n))}</b> a day.</p><p class="quiet">The vidhi asks for at least five.</p>
+        <p class="line">About <b>${fmtDur(estimateFor(setup.n))}</b> a day.</p>${setup.n < 5 ? `<p class="quiet">Fewer than the traditional five is fine. Change it any time in Settings.</p>` : ""}
         <div class="row"><button class="btn btn-primary" id="f-next">Continue</button><button class="link" id="f-back">Back</button></div>`;
     } else {
       body = `<h2 class="q">For your vow</h2><p class="quiet">Spoken in the sankalpa on Day 1. Everything here is optional.</p>
@@ -213,12 +213,12 @@
         <div class="field"><label for="f-wish">What you ask of the Mother</label><textarea id="f-wish" rows="2">${esc(setup.wish)}</textarea></div></div>
         <div class="row"><button class="btn btn-primary" id="f-go">Set my sankalpa</button><button class="link" id="f-back">Back</button></div>`;
     }
-    el.innerHTML = `<div class="inner"><div class="meta">Lalita Sahasranama Sadhana</div>${body}${dots}</div>`;
+    el.innerHTML = `<div class="inner">${body}${dots}</div>`;
     const go = (n) => { setup.step = n; renderSetup(el); };
     el.querySelectorAll("#f-days button").forEach((b) => b.onclick = () => { if (b.dataset.n === "custom") { setup.custom = true; setup.days = Math.max(1, Math.min(120, setup.days)); } else { setup.custom = false; setup.days = +b.dataset.n; } renderSetup(el); });
     $("#f-days-c", el)?.addEventListener("input", (e) => (setup.days = Math.max(1, Math.min(120, +e.target.value || 1))));
     $("#f-start", el)?.addEventListener("click", () => { setup.startOff = setup.startOff ? 0 : 1; renderSetup(el); });
-    $("#f-minus", el)?.addEventListener("click", () => { setup.n = Math.max(5, setup.n - 1); renderSetup(el); });
+    $("#f-minus", el)?.addEventListener("click", () => { setup.n = Math.max(1, setup.n - 1); renderSetup(el); });
     $("#f-plus", el)?.addEventListener("click", () => { setup.n = Math.min(21, setup.n + 1); renderSetup(el); });
     $("#f-next", el)?.addEventListener("click", () => go(setup.step + 1));
     $("#f-back", el)?.addEventListener("click", () => go(setup.step - 1));
@@ -256,7 +256,7 @@
     const naam = NAMES[(st.dayNo - 1) % 1000];
     const totals = st.totals.paath ? `${st.totals.paath} recitations · ${(st.totals.paath * 1000).toLocaleString("en-IN")} names chanted` : "";
     el.innerHTML = `<div class="inner">
-      <div class="meta">Lalita Sahasranama Sadhana</div>
+      
       <div class="day"><b class="num">Day ${st.complete ? sk.days : st.dayNo}</b><span>of ${sk.days}</span></div>
       <div><p class="line">${line}</p>${sub ? `<p class="quiet" style="margin-top:8px">${sub}</p>` : ""}</div>
       ${alertHTML}${btn}${inc}
@@ -565,7 +565,7 @@
   // =========================================================
   function renderVidhi() {
     const sk = S().sankalp || {};
-    let h = `<div><div class="eyebrow">Inspired by Shri Om Swami</div><h1>Shri Lalita Sahasranama Malamantra Japavidhi</h1></div>
+    let h = `<div><div class="eyebrow">Inspired by Shri Om Swami</div><h1>Guide</h1></div>
       <p class="lead">All 21 steps from your PDF. Instructions are in English; mantras stay in Sanskrit, exactly as written, with a Roman transliteration beneath.</p>
       <div class="sec-h"><h2>What you need</h2><span class="deva">सामग्री</span></div><div class="samagri">${SAMAGRI.map(([a, b]) => `<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>`;
     for (const [k, sec] of Object.entries(SECTIONS)) {
@@ -589,21 +589,37 @@
   // =========================================================
   // NAAMAVALI
   // =========================================================
-  let naamQ = "";
+  let naamQ = "", naamRows = [], naamShown = 0, naamLow = null, naamIO = null, naamTimer = 0;
+  const NAAM_STEP = 40;
   function renderNaam() {
     const el = $("#naamBody");
     if (!el.dataset.ready) {
-      el.innerHTML = `<div><div class="eyebrow">१००० नाम</div><h1>Shri Lalita Sahasranamavali</h1></div><p class="lead">The meaning of every name. Search in Devanagari, Roman letters or English.</p>
-        <div class="search"><input id="n-q" type="search" placeholder="Search: श्रीमाता, mata, mother, 108…" autocomplete="off"></div><div class="nlist" id="n-list"></div>`;
+      el.innerHTML = `<div><div class="eyebrow">१००० नाम</div><h1>1000 Names</h1></div><p class="lead">The meaning of every name. Search in Devanagari, Roman letters or English.</p>
+        <div class="search"><input id="n-q" type="search" placeholder="Search: श्रीमाता, mata, mother, 108…" autocomplete="off"></div><div class="nlist" id="n-list"></div><div id="n-end" class="n-end"><button class="link" id="n-more">Show more</button></div>`;
       el.dataset.ready = 1;
-      $("#n-q").addEventListener("input", (e) => { naamQ = e.target.value.trim().toLowerCase(); drawNames(); });
+      $("#n-q").addEventListener("input", (e) => { clearTimeout(naamTimer); naamTimer = setTimeout(() => { naamQ = e.target.value.trim().toLowerCase(); drawNames(); }, 150); });
+      $("#n-more").onclick = () => moreNames();
+      // load the next rows when the end of the list scrolls into view
+      if ("IntersectionObserver" in window) { naamIO = new IntersectionObserver((en) => { if (en[0].isIntersecting) moreNames(); }, { root: $("#v-naam"), rootMargin: "800px 0px" }); naamIO.observe($("#n-end")); }
     }
-    drawNames();
+    if (!naamRows.length && !naamQ) drawNames();
   }
   function drawNames() {
+    if (!naamLow) naamLow = NAMES.map((x) => [x[0], x[1].toLowerCase(), x[2].toLowerCase()]);
     const q = naamQ; const num = /^\d+$/.test(q) ? +q : 0;
-    const rows = NAMES.map((x, i) => [i, x]).filter(([i, x]) => !q || (num ? i + 1 === num : x[0].includes(q) || x[1].toLowerCase().includes(q) || x[2].toLowerCase().includes(q))).slice(0, q ? 1000 : 1000);
-    $("#n-list").innerHTML = rows.map(([i, x]) => `<div class="nrow"><span class="i num">${i + 1}</span><div><div class="d">${esc(x[0])}</div><div class="r">${esc(x[1])}</div></div><div class="m">${esc(x[2])}</div></div>`).join("") || `<p class="hint">No name found.</p>`;
+    naamRows = [];
+    for (let i = 0; i < NAMES.length; i++) { const x = naamLow[i]; if (!q || (num ? i + 1 === num : x[0].includes(q) || x[1].includes(q) || x[2].includes(q))) naamRows.push(i); }
+    naamShown = 0; $("#n-list").innerHTML = "";
+    if (!naamRows.length) { $("#n-list").innerHTML = `<p class="hint">No name found.</p>`; }
+    moreNames();
+  }
+  function moreNames() {
+    const end = Math.min(naamRows.length, naamShown + NAAM_STEP);
+    let h = "";
+    for (let k = naamShown; k < end; k++) { const i = naamRows[k], x = NAMES[i]; h += `<div class="nrow"><span class="i num">${i + 1}</span><div><div class="d">${esc(x[0])}</div><div class="r">${esc(x[1])}</div></div><div class="m">${esc(x[2])}</div></div>`; }
+    if (h) $("#n-list").insertAdjacentHTML("beforeend", h);
+    naamShown = end;
+    $("#n-more").hidden = naamShown >= naamRows.length;
   }
 
   // =========================================================
@@ -648,7 +664,7 @@
         <div class="field"><label for="o-scale">Mantra text size</label><input id="o-scale" type="range" min=".85" max="1.5" step=".05" value="${p.scale}"></div></div>
       <div class="sheet-sec"><h3>Sound</h3>${sw("o-bell", p.bell, "Bell at each step")}${sw("o-drone", p.drone, "Soft tanpura drone during sadhana")}</div>
       ${sk ? `<div class="sheet-sec"><h3>Sankalpa</h3>
-        <div class="grid2"><div class="field"><label for="o-paath">Recitations per day</label><input id="o-paath" type="number" min="5" max="21" value="${sk.paathPerDay}"></div>
+        <div class="grid2"><div class="field"><label for="o-paath">Recitations per day</label><input id="o-paath" type="number" min="1" max="21" value="${sk.paathPerDay}"></div>
         <div class="field"><label for="o-pmin">One recitation (min)</label><input id="o-pmin" type="number" min="8" max="60" value="${sk.paathMin}"></div></div>
         <div class="grid2"><div class="field"><label for="o-days">Total days</label><input id="o-days" type="number" min="1" max="120" value="${sk.days}"></div>
         <div class="field"><label for="o-ds">Day changes at (AM)</label><input id="o-ds" type="number" min="0" max="6" value="${sk.dayStart}"></div></div>
@@ -671,8 +687,8 @@
     $("#o-ok", o).onclick = () => {
       if (sk) {
         const v = (id) => $(id, o).value.trim();
-        Object.assign(sk, { paathPerDay: Math.max(5, Math.min(21, +v("#o-paath") || 5)), paathMin: Math.max(8, Math.min(60, +v("#o-pmin") || 22)), days: Math.max(1, Math.min(120, +v("#o-days") || sk.days)), dayStart: Math.max(0, Math.min(6, +v("#o-ds") || 0)), name: v("#o-name"), gotra: v("#o-gotra"), dob: v("#o-dob"), wish: v("#o-wish") });
-        if (S().session) S().session.target = Math.max(S().session.target, sk.paathPerDay);
+        Object.assign(sk, { paathPerDay: Math.max(1, Math.min(21, Math.round(+v("#o-paath")) || sk.paathPerDay)), paathMin: Math.max(8, Math.min(60, +v("#o-pmin") || 22)), days: Math.max(1, Math.min(120, +v("#o-days") || sk.days)), dayStart: Math.max(0, Math.min(6, +v("#o-ds") || 0)), name: v("#o-name"), gotra: v("#o-gotra"), dob: v("#o-dob"), wish: v("#o-wish") });
+        if (S().session) S().session.target = Math.max(sk.paathPerDay, S().session.paaths?.length || 0);
       }
       save(true); applyPrefs(); o.remove(); rerender(); toast("Saved");
     };

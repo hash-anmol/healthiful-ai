@@ -389,6 +389,8 @@
   const fill = new THREE.PointLight(0xff8a50, .35, 6, 2); fill.position.set(0, 1.6, .8); scene.add(fill);
 
   // ---------- layout (shift the view so the altar sits beside the panel) ----------
+  // rest mode: pages other than the altar stop rendering once the camera has settled
+  let wantRest = false, restFrames = -1, looping = true;
   let layoutMode = "side";
   function layout(mode) {
     layoutMode = mode || layoutMode;
@@ -399,16 +401,20 @@
     else camera.setViewOffset(w, h, 0, h * (w < 560 ? .3 : .26), w, h);
     camera.fov = wide ? 50 : (w < 560 ? 70 : 62);
     camera.updateProjectionMatrix();
+    if (wantRest) wake();
   }
   addEventListener("resize", () => layout());
   layout("side");
 
   // ---------- loop ----------
   const clock = new THREE.Clock(); let t = 0, running = true, frame = 0;
-  document.addEventListener("visibilitychange", () => { running = !document.hidden; if (running) { clock.getDelta(); loop(); } });
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; if (running) kick(); });
+  function kick() { if (looping) return; looping = true; clock.getDelta(); requestAnimationFrame(loop); }
+  function wake() { restFrames = wantRest ? 120 : -1; kick(); }
   const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
   function loop() {
-    if (!running) return;
+    if (!running || restFrames === 0) { looping = false; return; }
+    if (restFrames > 0) restFrames--;
     requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), .05); t += dt; frame++;
     // camera
@@ -506,6 +512,10 @@
     },
     ringBell() { S.bellSwing = 1; },
     setDays,
-    lightNewDay(total, lit) { setDays(total, lit); S.burst = 1; spawnPetals(30); }
+    lightNewDay(total, lit) { setDays(total, lit); S.burst = 1; spawnPetals(30); },
+    rest(on) { wantRest = !!on; wake(); }
   };
+  for (const k of ["goto", "set", "fx", "ringBell", "setDays", "lightNewDay"]) {
+    const fn = window.Hut[k]; window.Hut[k] = (...a) => { wake(); return fn(...a); };
+  }
 })();

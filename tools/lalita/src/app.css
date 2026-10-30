@@ -67,7 +67,7 @@ main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
 /* tabs */
 #tabs {
   align-self: center; display: flex; gap: 4px; padding: 6px; margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-  background: var(--glass-hi); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  background: rgba(22,13,16,.92);
   border: 1px solid var(--line); border-radius: 99px;
 }
 #tabs button { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 99px; color: var(--ink-2); font-weight: 500; min-height: 46px; }
@@ -75,9 +75,16 @@ main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
 #tabs button.on { background: rgba(234,169,59,.18); color: #ffe3b0; }
 
 /* full pages (vidhi / naam / yatra) */
-.page { background: rgba(14, 8, 10, 0.82); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.page-in { max-width: 860px; margin: 0 auto; padding-block: 10px 120px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; }
-.page h1 { font-family: var(--f-deva); font-weight: 400; font-size: 40px; margin: 8px 0 0; line-height: 1.1; text-wrap: balance; }
+.page {
+  box-sizing: border-box; left: auto; right: 0; top: 0; bottom: 0; width: min(720px, 60vw);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 84px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 110px);
+  padding-left: 120px; padding-right: max(44px, env(safe-area-inset-right, 0px));
+  background: linear-gradient(to left, rgba(12,6,8,.97) 0%, rgba(12,6,8,.95) 78%, rgba(12,6,8,0) 100%);
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none;
+}
+.page::-webkit-scrollbar { display: none; }
+.page-in { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+.page h1 { font-weight: 600; font-size: 30px; margin: 6px 0 0; line-height: 1.15; text-wrap: balance; }
 .page .lead { color: var(--ink-2); max-width: 65ch; margin: 0; }
 .sec-h { display: flex; align-items: baseline; gap: 12px; border-top: 1px solid var(--line-2); padding-top: 18px; margin-top: 10px; flex-wrap: wrap; }
 .sec-h h2 { margin: 0; font-size: 22px; font-weight: 600; }
@@ -106,7 +113,7 @@ main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
 .search { position: sticky; top: 0; z-index: 2; padding-block: 8px; background: linear-gradient(rgba(14,8,10,.95) 70%, rgba(14,8,10,0)); }
 .search input { width: 100%; background: rgba(0,0,0,.35); border: 1px solid var(--line-2); border-radius: 14px; padding: 14px 16px; min-height: 52px; outline: none; }
 .nlist { display: flex; flex-direction: column; }
-.nrow { display: grid; grid-template-columns: 56px 1fr; gap: 2px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.nrow { content-visibility: auto; contain-intrinsic-size: auto 78px; display: grid; grid-template-columns: 56px 1fr; gap: 2px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .nrow .i { color: var(--brass); font-size: 14px; padding-top: 6px; }
 .nrow .d { font-family: var(--f-deva); font-size: 22px; color: #ffeccc; overflow-wrap: anywhere; }
 .nrow .r { color: var(--ink-2); font-style: italic; font-size: 14px; overflow-wrap: anywhere; }
@@ -317,3 +324,8 @@ details.inc[open] summary::after { content: " –"; }
 .darshan-big { width: min(100%, 420px); max-height: 62vh; object-fit: contain; border-radius: 16px; border: 2px solid var(--brass); }
 .back-btn { margin-right: 4px; }
 @media (orientation: portrait), (max-width: 899px) { .darshan { display: none; } .arch { width: 72px; height: 94px; border-radius: 36px 36px 12px 12px; } }
+
+.n-end { display: flex; justify-content: center; padding: 18px 0 4px; }
+@media (orientation: portrait), (max-width: 899px) {
+  .page { left: 0; right: 0; top: auto; width: auto; height: 86%; padding: 40px max(28px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 110px) max(28px, env(safe-area-inset-left, 0px)); background: linear-gradient(to top, rgba(12,6,8,.97) 0%, rgba(12,6,8,.95) 85%, rgba(12,6,8,0) 100%); }
+}

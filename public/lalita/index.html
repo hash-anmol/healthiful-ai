@@ -73,7 +73,7 @@ main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
 /* tabs */
 #tabs {
   align-self: center; display: flex; gap: 4px; padding: 6px; margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-  background: var(--glass-hi); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  background: rgba(22,13,16,.92);
   border: 1px solid var(--line); border-radius: 99px;
 }
 #tabs button { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 99px; color: var(--ink-2); font-weight: 500; min-height: 46px; }
@@ -81,9 +81,16 @@ main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
 #tabs button.on { background: rgba(234,169,59,.18); color: #ffe3b0; }
 
 /* full pages (vidhi / naam / yatra) */
-.page { background: rgba(14, 8, 10, 0.82); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.page-in { max-width: 860px; margin: 0 auto; padding-block: 10px 120px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; }
-.page h1 { font-family: var(--f-deva); font-weight: 400; font-size: 40px; margin: 8px 0 0; line-height: 1.1; text-wrap: balance; }
+.page {
+  box-sizing: border-box; left: auto; right: 0; top: 0; bottom: 0; width: min(720px, 60vw);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 84px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 110px);
+  padding-left: 120px; padding-right: max(44px, env(safe-area-inset-right, 0px));
+  background: linear-gradient(to left, rgba(12,6,8,.97) 0%, rgba(12,6,8,.95) 78%, rgba(12,6,8,0) 100%);
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none;
+}
+.page::-webkit-scrollbar { display: none; }
+.page-in { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+.page h1 { font-weight: 600; font-size: 30px; margin: 6px 0 0; line-height: 1.15; text-wrap: balance; }
 .page .lead { color: var(--ink-2); max-width: 65ch; margin: 0; }
 .sec-h { display: flex; align-items: baseline; gap: 12px; border-top: 1px solid var(--line-2); padding-top: 18px; margin-top: 10px; flex-wrap: wrap; }
 .sec-h h2 { margin: 0; font-size: 22px; font-weight: 600; }
@@ -112,7 +119,7 @@ main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
 .search { position: sticky; top: 0; z-index: 2; padding-block: 8px; background: linear-gradient(rgba(14,8,10,.95) 70%, rgba(14,8,10,0)); }
 .search input { width: 100%; background: rgba(0,0,0,.35); border: 1px solid var(--line-2); border-radius: 14px; padding: 14px 16px; min-height: 52px; outline: none; }
 .nlist { display: flex; flex-direction: column; }
-.nrow { display: grid; grid-template-columns: 56px 1fr; gap: 2px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.nrow { content-visibility: auto; contain-intrinsic-size: auto 78px; display: grid; grid-template-columns: 56px 1fr; gap: 2px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .nrow .i { color: var(--brass); font-size: 14px; padding-top: 6px; }
 .nrow .d { font-family: var(--f-deva); font-size: 22px; color: #ffeccc; overflow-wrap: anywhere; }
 .nrow .r { color: var(--ink-2); font-style: italic; font-size: 14px; overflow-wrap: anywhere; }
@@ -323,13 +330,17 @@ details.inc[open] summary::after { content: " –"; }
 .darshan-big { width: min(100%, 420px); max-height: 62vh; object-fit: contain; border-radius: 16px; border: 2px solid var(--brass); }
 .back-btn { margin-right: 4px; }
 @media (orientation: portrait), (max-width: 899px) { .darshan { display: none; } .arch { width: 72px; height: 94px; border-radius: 36px 36px 12px 12px; } }
+
+.n-end { display: flex; justify-content: center; padding: 18px 0 4px; }
+@media (orientation: portrait), (max-width: 899px) {
+  .page { left: 0; right: 0; top: auto; width: auto; height: 86%; padding: 40px max(28px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 110px) max(28px, env(safe-area-inset-left, 0px)); background: linear-gradient(to top, rgba(12,6,8,.97) 0%, rgba(12,6,8,.95) 85%, rgba(12,6,8,0) 100%); }
+}
 </style>
 <canvas id="scene" aria-hidden="true"></canvas>
 <div id="app">
   <header class="topbar">
-    <div class="brand"><button class="icon-btn back-btn" id="b-exit" hidden aria-label="Back to Healthiful"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button><span class="mark">श्री</span><b>Sadhana</b></div>
-    <div class="top-actions"><span class="sync" id="sync"></span>
-      <button class="icon-btn" id="b-settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button></div>
+    <div class="brand"><button class="icon-btn back-btn" id="b-exit" hidden aria-label="Back to Healthiful"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+    <div class="top-actions"><button class="icon-btn" id="b-settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button></div>
   </header>
   <main>
     <section id="v-home" class="view"><div class="side" id="homePanel"></div><button class="darshan" id="h-darshan" aria-label="View Mother Lalita"><img src="" alt=""></button></section>
@@ -338,7 +349,7 @@ details.inc[open] summary::after { content: " –"; }
     <section id="v-yatra" class="view page" hidden><div class="page-in" id="yatraBody"></div></section>
   </main>
   <nav id="tabs" aria-label="Sections">
-    <button data-v="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3c2 3 4 4.5 4 7.5a4 4 0 0 1-8 0C8 7.5 10 6 12 3Z"/><path d="M5 16c2 3 12 3 14 0M7 20h10"/></svg><span>Sadhana</span></button>
+    <button data-v="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3c2 3 4 4.5 4 7.5a4 4 0 0 1-8 0C8 7.5 10 6 12 3Z"/><path d="M5 16c2 3 12 3 14 0M7 20h10"/></svg><span>Today</span></button>
     <button data-v="vidhi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2V5Z"/><path d="M4 19a2 2 0 0 1 2-2h12M8 7h7M8 11h5"/></svg><span>Guide</span></button>
     <button data-v="naam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="4" r="1.6"/><circle cx="12" cy="20" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="20" cy="12" r="1.6"/></svg><span>1000 Names</span></button>
     <button data-v="yatra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Journey</span></button>
@@ -1425,6 +1436,8 @@ const SANKALP = {
   const fill = new THREE.PointLight(0xff8a50, .35, 6, 2); fill.position.set(0, 1.6, .8); scene.add(fill);
 
   // ---------- layout (shift the view so the altar sits beside the panel) ----------
+  // rest mode: pages other than the altar stop rendering once the camera has settled
+  let wantRest = false, restFrames = -1, looping = true;
   let layoutMode = "side";
   function layout(mode) {
     layoutMode = mode || layoutMode;
@@ -1435,16 +1448,20 @@ const SANKALP = {
     else camera.setViewOffset(w, h, 0, h * (w < 560 ? .3 : .26), w, h);
     camera.fov = wide ? 50 : (w < 560 ? 70 : 62);
     camera.updateProjectionMatrix();
+    if (wantRest) wake();
   }
   addEventListener("resize", () => layout());
   layout("side");
 
   // ---------- loop ----------
   const clock = new THREE.Clock(); let t = 0, running = true, frame = 0;
-  document.addEventListener("visibilitychange", () => { running = !document.hidden; if (running) { clock.getDelta(); loop(); } });
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; if (running) kick(); });
+  function kick() { if (looping) return; looping = true; clock.getDelta(); requestAnimationFrame(loop); }
+  function wake() { restFrames = wantRest ? 120 : -1; kick(); }
   const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
   function loop() {
-    if (!running) return;
+    if (!running || restFrames === 0) { looping = false; return; }
+    if (restFrames > 0) restFrames--;
     requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), .05); t += dt; frame++;
     // camera
@@ -1542,8 +1559,12 @@ const SANKALP = {
     },
     ringBell() { S.bellSwing = 1; },
     setDays,
-    lightNewDay(total, lit) { setDays(total, lit); S.burst = 1; spawnPetals(30); }
+    lightNewDay(total, lit) { setDays(total, lit); S.burst = 1; spawnPetals(30); },
+    rest(on) { wantRest = !!on; wake(); }
   };
+  for (const k of ["goto", "set", "fx", "ringBell", "setDays", "lightNewDay"]) {
+    const fn = window.Hut[k]; window.Hut[k] = (...a) => { wake(); return fn(...a); };
+  }
 })();
 </script>
 <script>// Sadhana app: state, storage, home, session, vidhi, naamavali, yatra.
@@ -1626,7 +1647,7 @@ const SANKALP = {
       syncMode = "cloud"; renderSync();
     } catch (e) { syncMode = "local"; renderSync(); }
   }
-  function renderSync() { const el = $("#sync"); el.className = "sync " + syncMode; el.innerHTML = `<i></i>${syncMode === "cloud" ? "Synced" : "On this device"}`; }
+  function renderSync() { /* sync state is explained in Settings > Backup; no badge on screen */ }
 
   // ---------- estimates ----------
   const stepsForDay = (dayNo) => STEPS.filter((s) => !s.day1 || dayNo === 1);
@@ -1733,7 +1754,7 @@ const SANKALP = {
     view = v;
     ["home", "vidhi", "naam", "yatra"].forEach((k) => ($("#v-" + k).hidden = k !== v));
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
-    window.Hut?.layout(v === "home" ? "side" : "full");
+    window.Hut?.layout("side"); window.Hut?.rest(v !== "home");
     if (v === "vidhi") renderVidhi(); if (v === "naam") renderNaam(); if (v === "yatra") renderYatra(); if (v === "home") renderHome();
   }
 
@@ -1752,7 +1773,7 @@ const SANKALP = {
     } else if (setup.step === 1) {
       body = `<h2 class="q">How many recitations each day?</h2>
         <div class="stepper"><button class="round" id="f-minus" aria-label="Fewer">–</button><b class="num">${setup.n}</b><button class="round" id="f-plus" aria-label="More">+</button></div>
-        <p class="line">About <b>${fmtDur(estimateFor(setup.n))}</b> a day.</p><p class="quiet">The vidhi asks for at least five.</p>
+        <p class="line">About <b>${fmtDur(estimateFor(setup.n))}</b> a day.</p>${setup.n < 5 ? `<p class="quiet">Fewer than the traditional five is fine. Change it any time in Settings.</p>` : ""}
         <div class="row"><button class="btn btn-primary" id="f-next">Continue</button><button class="link" id="f-back">Back</button></div>`;
     } else {
       body = `<h2 class="q">For your vow</h2><p class="quiet">Spoken in the sankalpa on Day 1. Everything here is optional.</p>
@@ -1761,12 +1782,12 @@ const SANKALP = {
         <div class="field"><label for="f-wish">What you ask of the Mother</label><textarea id="f-wish" rows="2">${esc(setup.wish)}</textarea></div></div>
         <div class="row"><button class="btn btn-primary" id="f-go">Set my sankalpa</button><button class="link" id="f-back">Back</button></div>`;
     }
-    el.innerHTML = `<div class="inner"><div class="meta">Lalita Sahasranama Sadhana</div>${body}${dots}</div>`;
+    el.innerHTML = `<div class="inner">${body}${dots}</div>`;
     const go = (n) => { setup.step = n; renderSetup(el); };
     el.querySelectorAll("#f-days button").forEach((b) => b.onclick = () => { if (b.dataset.n === "custom") { setup.custom = true; setup.days = Math.max(1, Math.min(120, setup.days)); } else { setup.custom = false; setup.days = +b.dataset.n; } renderSetup(el); });
     $("#f-days-c", el)?.addEventListener("input", (e) => (setup.days = Math.max(1, Math.min(120, +e.target.value || 1))));
     $("#f-start", el)?.addEventListener("click", () => { setup.startOff = setup.startOff ? 0 : 1; renderSetup(el); });
-    $("#f-minus", el)?.addEventListener("click", () => { setup.n = Math.max(5, setup.n - 1); renderSetup(el); });
+    $("#f-minus", el)?.addEventListener("click", () => { setup.n = Math.max(1, setup.n - 1); renderSetup(el); });
     $("#f-plus", el)?.addEventListener("click", () => { setup.n = Math.min(21, setup.n + 1); renderSetup(el); });
     $("#f-next", el)?.addEventListener("click", () => go(setup.step + 1));
     $("#f-back", el)?.addEventListener("click", () => go(setup.step - 1));
@@ -1804,7 +1825,7 @@ const SANKALP = {
     const naam = NAMES[(st.dayNo - 1) % 1000];
     const totals = st.totals.paath ? `${st.totals.paath} recitations · ${(st.totals.paath * 1000).toLocaleString("en-IN")} names chanted` : "";
     el.innerHTML = `<div class="inner">
-      <div class="meta">Lalita Sahasranama Sadhana</div>
+      
       <div class="day"><b class="num">Day ${st.complete ? sk.days : st.dayNo}</b><span>of ${sk.days}</span></div>
       <div><p class="line">${line}</p>${sub ? `<p class="quiet" style="margin-top:8px">${sub}</p>` : ""}</div>
       ${alertHTML}${btn}${inc}
@@ -2113,7 +2134,7 @@ const SANKALP = {
   // =========================================================
   function renderVidhi() {
     const sk = S().sankalp || {};
-    let h = `<div><div class="eyebrow">Inspired by Shri Om Swami</div><h1>Shri Lalita Sahasranama Malamantra Japavidhi</h1></div>
+    let h = `<div><div class="eyebrow">Inspired by Shri Om Swami</div><h1>Guide</h1></div>
       <p class="lead">All 21 steps from your PDF. Instructions are in English; mantras stay in Sanskrit, exactly as written, with a Roman transliteration beneath.</p>
       <div class="sec-h"><h2>What you need</h2><span class="deva">सामग्री</span></div><div class="samagri">${SAMAGRI.map(([a, b]) => `<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>`;
     for (const [k, sec] of Object.entries(SECTIONS)) {
@@ -2137,21 +2158,37 @@ const SANKALP = {
   // =========================================================
   // NAAMAVALI
   // =========================================================
-  let naamQ = "";
+  let naamQ = "", naamRows = [], naamShown = 0, naamLow = null, naamIO = null, naamTimer = 0;
+  const NAAM_STEP = 40;
   function renderNaam() {
     const el = $("#naamBody");
     if (!el.dataset.ready) {
-      el.innerHTML = `<div><div class="eyebrow">१००० नाम</div><h1>Shri Lalita Sahasranamavali</h1></div><p class="lead">The meaning of every name. Search in Devanagari, Roman letters or English.</p>
-        <div class="search"><input id="n-q" type="search" placeholder="Search: श्रीमाता, mata, mother, 108…" autocomplete="off"></div><div class="nlist" id="n-list"></div>`;
+      el.innerHTML = `<div><div class="eyebrow">१००० नाम</div><h1>1000 Names</h1></div><p class="lead">The meaning of every name. Search in Devanagari, Roman letters or English.</p>
+        <div class="search"><input id="n-q" type="search" placeholder="Search: श्रीमाता, mata, mother, 108…" autocomplete="off"></div><div class="nlist" id="n-list"></div><div id="n-end" class="n-end"><button class="link" id="n-more">Show more</button></div>`;
       el.dataset.ready = 1;
-      $("#n-q").addEventListener("input", (e) => { naamQ = e.target.value.trim().toLowerCase(); drawNames(); });
+      $("#n-q").addEventListener("input", (e) => { clearTimeout(naamTimer); naamTimer = setTimeout(() => { naamQ = e.target.value.trim().toLowerCase(); drawNames(); }, 150); });
+      $("#n-more").onclick = () => moreNames();
+      // load the next rows when the end of the list scrolls into view
+      if ("IntersectionObserver" in window) { naamIO = new IntersectionObserver((en) => { if (en[0].isIntersecting) moreNames(); }, { root: $("#v-naam"), rootMargin: "800px 0px" }); naamIO.observe($("#n-end")); }
     }
-    drawNames();
+    if (!naamRows.length && !naamQ) drawNames();
   }
   function drawNames() {
+    if (!naamLow) naamLow = NAMES.map((x) => [x[0], x[1].toLowerCase(), x[2].toLowerCase()]);
     const q = naamQ; const num = /^\d+$/.test(q) ? +q : 0;
-    const rows = NAMES.map((x, i) => [i, x]).filter(([i, x]) => !q || (num ? i + 1 === num : x[0].includes(q) || x[1].toLowerCase().includes(q) || x[2].toLowerCase().includes(q))).slice(0, q ? 1000 : 1000);
-    $("#n-list").innerHTML = rows.map(([i, x]) => `<div class="nrow"><span class="i num">${i + 1}</span><div><div class="d">${esc(x[0])}</div><div class="r">${esc(x[1])}</div></div><div class="m">${esc(x[2])}</div></div>`).join("") || `<p class="hint">No name found.</p>`;
+    naamRows = [];
+    for (let i = 0; i < NAMES.length; i++) { const x = naamLow[i]; if (!q || (num ? i + 1 === num : x[0].includes(q) || x[1].includes(q) || x[2].includes(q))) naamRows.push(i); }
+    naamShown = 0; $("#n-list").innerHTML = "";
+    if (!naamRows.length) { $("#n-list").innerHTML = `<p class="hint">No name found.</p>`; }
+    moreNames();
+  }
+  function moreNames() {
+    const end = Math.min(naamRows.length, naamShown + NAAM_STEP);
+    let h = "";
+    for (let k = naamShown; k < end; k++) { const i = naamRows[k], x = NAMES[i]; h += `<div class="nrow"><span class="i num">${i + 1}</span><div><div class="d">${esc(x[0])}</div><div class="r">${esc(x[1])}</div></div><div class="m">${esc(x[2])}</div></div>`; }
+    if (h) $("#n-list").insertAdjacentHTML("beforeend", h);
+    naamShown = end;
+    $("#n-more").hidden = naamShown >= naamRows.length;
   }
 
   // =========================================================
@@ -2196,7 +2233,7 @@ const SANKALP = {
         <div class="field"><label for="o-scale">Mantra text size</label><input id="o-scale" type="range" min=".85" max="1.5" step=".05" value="${p.scale}"></div></div>
       <div class="sheet-sec"><h3>Sound</h3>${sw("o-bell", p.bell, "Bell at each step")}${sw("o-drone", p.drone, "Soft tanpura drone during sadhana")}</div>
       ${sk ? `<div class="sheet-sec"><h3>Sankalpa</h3>
-        <div class="grid2"><div class="field"><label for="o-paath">Recitations per day</label><input id="o-paath" type="number" min="5" max="21" value="${sk.paathPerDay}"></div>
+        <div class="grid2"><div class="field"><label for="o-paath">Recitations per day</label><input id="o-paath" type="number" min="1" max="21" value="${sk.paathPerDay}"></div>
         <div class="field"><label for="o-pmin">One recitation (min)</label><input id="o-pmin" type="number" min="8" max="60" value="${sk.paathMin}"></div></div>
         <div class="grid2"><div class="field"><label for="o-days">Total days</label><input id="o-days" type="number" min="1" max="120" value="${sk.days}"></div>
         <div class="field"><label for="o-ds">Day changes at (AM)</label><input id="o-ds" type="number" min="0" max="6" value="${sk.dayStart}"></div></div>
@@ -2219,8 +2256,8 @@ const SANKALP = {
     $("#o-ok", o).onclick = () => {
       if (sk) {
         const v = (id) => $(id, o).value.trim();
-        Object.assign(sk, { paathPerDay: Math.max(5, Math.min(21, +v("#o-paath") || 5)), paathMin: Math.max(8, Math.min(60, +v("#o-pmin") || 22)), days: Math.max(1, Math.min(120, +v("#o-days") || sk.days)), dayStart: Math.max(0, Math.min(6, +v("#o-ds") || 0)), name: v("#o-name"), gotra: v("#o-gotra"), dob: v("#o-dob"), wish: v("#o-wish") });
-        if (S().session) S().session.target = Math.max(S().session.target, sk.paathPerDay);
+        Object.assign(sk, { paathPerDay: Math.max(1, Math.min(21, Math.round(+v("#o-paath")) || sk.paathPerDay)), paathMin: Math.max(8, Math.min(60, +v("#o-pmin") || 22)), days: Math.max(1, Math.min(120, +v("#o-days") || sk.days)), dayStart: Math.max(0, Math.min(6, +v("#o-ds") || 0)), name: v("#o-name"), gotra: v("#o-gotra"), dob: v("#o-dob"), wish: v("#o-wish") });
+        if (S().session) S().session.target = Math.max(sk.paathPerDay, S().session.paaths?.length || 0);
       }
       save(true); applyPrefs(); o.remove(); rerender(); toast("Saved");
     };
