@@ -268,11 +268,37 @@
     $("#b-ack", el)?.addEventListener("click", () => { S().ack.push(...st.unack); save(); renderHome(); toast("Okay. Carrying on from today."); });
     $("#b-new", el)?.addEventListener("click", () => restartSankalp(true));
   }
-  function restartSankalp() {
-    const s = S(); const st = status();
-    if (s.sankalp) s.history.push({ startKey: s.sankalp.startKey, endKey: todayKey(), days: s.sankalp.days, done: st?.doneCount || 0 });
+  function archiveSankalp() {
+    const s = S(), st = status();
+    if (s.sankalp && st?.doneCount) s.history.push({ startKey: s.sankalp.startKey, endKey: todayKey(), days: s.sankalp.days, done: st.doneCount });
+  }
+  // fresh: the sankalpa is being abandoned or finished, so today's log must not count towards the next one
+  function restartSankalp(fresh) {
+    const s = S();
+    archiveSankalp();
+    if (fresh) delete s.logs[todayKey()];
     if (s.sankalp) s.sankalp = { ...s.sankalp, startKey: todayKey(), created: Date.now() };
     s.ack = []; s.session = null; save(true); renderHome(); toast("New sankalpa. Today is Day 1.");
+  }
+  // back to the three setup questions, prefilled from the sankalpa being replaced
+  function newSankalp() {
+    const s = S(), sk = s.sankalp;
+    archiveSankalp();
+    Object.assign(setup, { step: 0, days: sk.days, custom: ![31, 50].includes(sk.days), startOff: 0, n: sk.paathPerDay, name: sk.name || "", gotra: sk.gotra || "", dob: sk.dob || "", wish: sk.wish || "" });
+    delete s.logs[todayKey()]; s.sankalp = null; s.ack = []; s.session = null;
+    save(true); renderHome(); toast("Set up your new sankalpa.");
+  }
+  function openRestart(settings) {
+    const sk = S().sankalp, st = status();
+    const o = document.createElement("div"); o.className = "overlay";
+    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>Restart your sankalpa?</h2>
+      <p class="hint" style="color:var(--ink-2);font-size:16px">${st && st.doneCount ? `You have completed ${st.doneCount} of ${sk.days} days. ` : ""}Your streak goes back to zero. This sankalpa stays in your Journey as an earlier one, so nothing is lost.</p>
+      <div class="col"><button class="btn btn-primary btn-sm" id="r-same">Restart from Day 1</button><button class="btn btn-ghost btn-sm" id="r-new">Change days, recitations or vow</button><button class="link" id="r-n">Keep going</button></div></div>`;
+    document.body.appendChild(o);
+    const done = () => { o.remove(); settings.remove(); };
+    $("#r-n", o).onclick = () => o.remove();
+    $("#r-same", o).onclick = () => { done(); restartSankalp(true); };
+    $("#r-new", o).onclick = () => { done(); newSankalp(); };
   }
   function confirmBox(title, body, yes, onYes) {
     const o = document.createElement("div"); o.className = "overlay";
@@ -671,7 +697,8 @@
         <div class="field"><label for="o-name">Name</label><input id="o-name" value="${esc(sk.name)}"></div>
         <div class="grid2"><div class="field"><label for="o-gotra">Gotra</label><input id="o-gotra" value="${esc(sk.gotra)}"></div><div class="field"><label for="o-dob">Date of birth</label><input id="o-dob" value="${esc(sk.dob)}"></div></div>
         <div class="field"><label for="o-wish">Wish / intention</label><textarea id="o-wish" rows="2">${esc(sk.wish)}</textarea></div>
-        <p class="hint">Your time per recitation is learned automatically from your real timings; this number is only the starting estimate.</p></div>` : ""}
+        <p class="hint">Your time per recitation is learned automatically from your real timings; this number is only the starting estimate.</p>
+        ${sess ? "" : `<div class="restart"><p class="hint">Missed days, or want a fresh start?</p><button class="btn btn-ghost btn-sm" id="o-restart">Cancel and restart sankalpa</button></div>`}</div>` : ""}
       <div class="sheet-sec"><h3>Backup</h3><p class="hint">${syncMode === "cloud" ? "Your progress is synced to your account." : "Your progress is stored only on this device. Copy a backup to keep it safe."}</p>
         <div class="row"><button class="btn btn-ghost btn-sm" id="o-copy">Copy backup</button><button class="btn btn-ghost btn-sm" id="o-imp">Paste backup</button></div>
         <textarea class="backup" id="o-bk" hidden placeholder="Paste backup JSON here"></textarea></div>
@@ -682,6 +709,7 @@
     tg("o-rom", "showRoman"); tg("o-bell", "bell", () => p.bell && bell()); tg("o-drone", "drone", () => { if (sess) setDrone(p.drone); });
     o.querySelectorAll("#o-style button").forEach((b) => b.onclick = () => { p.roman = b.dataset.v; o.querySelectorAll("#o-style button").forEach((x) => x.classList.toggle("on", x === b)); });
     $("#o-scale", o).oninput = (e) => { p.scale = +e.target.value; applyPrefs(); };
+    $("#o-restart", o)?.addEventListener("click", () => openRestart(o));
     $("#o-copy", o).onclick = async () => { const t = JSON.stringify(state); try { await navigator.clipboard.writeText(t); toast("Backup copied"); } catch (e) { const ta = $("#o-bk", o); ta.hidden = false; ta.value = t; ta.select(); toast("Text selected. Copy it manually."); } };
     $("#o-imp", o).onclick = () => { const ta = $("#o-bk", o); if (ta.hidden) { ta.hidden = false; ta.value = ""; ta.focus(); return; } try { const d = JSON.parse(ta.value); if (!d.sadhanas) throw 0; state = Object.assign(fresh(), d); save(true); o.remove(); rerender(); toast("Backup restored"); } catch (e) { toast("That does not look like a valid backup"); } };
     $("#o-ok", o).onclick = () => {
