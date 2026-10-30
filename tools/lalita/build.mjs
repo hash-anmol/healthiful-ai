@@ -22,7 +22,7 @@ const shell = (assets, three) =>
     .replace("/*__APP__*/", () => R("src/app.js"));
 const b64 = (f) => "data:image/jpeg;base64," + fs.readFileSync(path.join(root, "assets", f)).toString("base64");
 
-const art = shell({ yantra: b64("yantra.jpg"), lalita: b64("lalita.jpg") }, '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>');
+const art = shell({ yantra: b64("yantra.jpg"), lalita: b64("lalita.jpg"), guru: b64("guru.jpg") }, '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>');
 fs.mkdirSync("/tmp/lalita-artifact", { recursive: true });
 fs.writeFileSync("/tmp/lalita-artifact/lalita-sadhana.html", art);
 console.log("artifact", (art.length / 1024).toFixed(0) + "KB");
@@ -30,9 +30,9 @@ console.log("artifact", (art.length / 1024).toFixed(0) + "KB");
 if (HEALTHIFUL) {
   const out = path.join(HEALTHIFUL, "public/lalita");
   fs.mkdirSync(out, { recursive: true });
-  for (const f of ["yantra.jpg", "lalita.jpg", "three.min.js"]) fs.copyFileSync(path.join(root, "assets", f), path.join(out, f));
+  for (const f of ["yantra.jpg", "lalita.jpg", "guru.jpg", "three.min.js"]) fs.copyFileSync(path.join(root, "assets", f), path.join(out, f));
   // the page is served as a full HTML document inside an iframe
-  const body = shell({ yantra: "/lalita/yantra.jpg", lalita: "/lalita/lalita.jpg" }, '<script src="/lalita/three.min.js"></script>');
+  const body = shell({ yantra: "/lalita/yantra.jpg", lalita: "/lalita/lalita.jpg", guru: "/lalita/guru.jpg" }, '<script src="/lalita/three.min.js"></script>');
   fs.writeFileSync(
     path.join(out, "index.html"),
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#120b0e"><style>html,body{margin:0;height:100%;background:#120b0e;color-scheme:dark}[hidden]{display:none!important}</style></head><body>${body}</body></html>`

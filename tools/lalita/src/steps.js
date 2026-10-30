@@ -309,7 +309,7 @@ const STEPS = [
     "t": "Remembering the guru",
     "th": "गुरु स्मरण",
     "est": 90,
-    "scene": "altar",
+    "scene": "guru",
     "do": "If you are initiated by a guru, remember them now. Otherwise establish Dakshinamurti as your guru in your mind and recite this mantra.",
     "bhaav": "The guru sits in your heart as a quiet light.",
     "m": [
