@@ -3,11 +3,13 @@
 (function () {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canvas = document.getElementById("scene");
+  const dpr = window.devicePixelRatio || 1;
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+    // retina screens already hide jagged edges; multisampling there costs a lot for little gain
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: dpr < 1.5, powerPreference: "high-performance" });
   } catch (e) { window.Hut = null; return; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(dpr, 1.5));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -406,16 +408,51 @@
   addEventListener("resize", () => layout());
   layout("side");
 
+  // ---------- adaptive quality: cap the frame rate, and step resolution / shadows down when frames run long ----------
+  const TIERS = [
+    { pr: 1.5, shadow: true, gap: 28, ms: 33.3 },
+    { pr: 1.25, shadow: true, gap: 28, ms: 33.3 },
+    { pr: 1, shadow: false, gap: 28, ms: 33.3 },
+    { pr: .85, shadow: false, gap: 42, ms: 50 },
+    { pr: .7, shadow: false, gap: 58, ms: 66.7 }
+  ];
+  let tier = 0, lastAt = 0, warmUntil = 0, win = [], stable = 0, holdMs = 45000, holdUntil = 0, wasMoving = false;
+  try { tier = Math.max(0, Math.min(TIERS.length - 1, Math.round(+localStorage.getItem("lalita-q")) || 0)); } catch (e) {}
+  if (tier > 0) holdUntil = performance.now() + 60000;
+  function applyTier() {
+    const T = TIERS[tier];
+    renderer.setPixelRatio(Math.min(dpr, T.pr));
+    lampLight.castShadow = T.shadow; renderer.shadowMap.needsUpdate = true;
+    warmUntil = performance.now() + 1500; win.length = 0; stable = 0;
+    try { localStorage.setItem("lalita-q", String(tier)); } catch (e) {}
+  }
+  // iv is the time since the previous rendered frame (0 right after a wake-up, which is not a real measurement).
+  // The median of 20 frames ignores one-off hitches such as a shader compile.
+  function adapt(iv, now) {
+    if (!iv || now < warmUntil) { win.length = 0; return; }
+    win.push(Math.min(iv, 1000)); if (win.length < 20) return;
+    win.sort((a, b) => a - b); const avg = win[10]; win.length = 0;
+    const ms = TIERS[tier].ms;
+    if (avg > ms * 1.35 && tier < TIERS.length - 1) { tier++; holdUntil = performance.now() + holdMs; holdMs = Math.min(holdMs * 2, 600000); applyTier(); }
+    else if (avg < ms * 1.1) { stable += 20; if (stable >= 240 && tier > 0 && performance.now() > holdUntil) { tier--; applyTier(); } }
+    else stable = 0;
+  }
+  const tmpQ = new THREE.Quaternion(), tmpV = new THREE.Vector3();
+
   // ---------- loop ----------
   const clock = new THREE.Clock(); let t = 0, running = true, frame = 0;
-  document.addEventListener("visibilitychange", () => { running = !document.hidden; if (running) kick(); });
-  function kick() { if (looping) return; looping = true; clock.getDelta(); requestAnimationFrame(loop); }
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; lastAt = 0; if (running) kick(); });
+  function kick() { if (looping) return; looping = true; lastAt = 0; clock.getDelta(); requestAnimationFrame(loop); }
   function wake() { restFrames = wantRest ? 120 : -1; kick(); }
   const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
   function loop() {
     if (!running || restFrames === 0) { looping = false; return; }
-    if (restFrames > 0) restFrames--;
     requestAnimationFrame(loop);
+    // frame cap: never render faster than ~30 fps, however fast the display refreshes (iPad Pro is 120 Hz)
+    const nowMs = performance.now();
+    if (nowMs - lastAt < TIERS[tier].gap) return;
+    const iv = lastAt ? nowMs - lastAt : 0; lastAt = nowMs;
+    if (restFrames > 0) restFrames--;
     const dt = Math.min(clock.getDelta(), .05); t += dt; frame++;
     // camera
     const breathe = reduce ? 0 : 1;
@@ -445,7 +482,9 @@
     // doors
     let moved = false;
     doors.forEach((p) => { const u = p.userData; const o = damp(u.open, u.target, 2.2, dt); if (Math.abs(o - u.open) > 1e-4) moved = true; u.open = o; p.rotation.y = u.side * 1.9 * o; });
-    if (moved || frame % 20 === 0) renderer.shadowMap.needsUpdate = true;
+    // shadows only change when the doors or bell move (the rest of the altar is static), so skip the six-face lamp shadow pass otherwise
+    if ((moved && frame % 3 === 0) || (!moved && wasMoving) || (S.bellSwing > .03 && frame % 6 === 0)) renderer.shadowMap.needsUpdate = true;
+    wasMoving = moved;
     // bell
     S.bellSwing = damp(S.bellSwing, 0, .9, dt); bell.rotation.z = Math.sin(t * 6) * S.bellSwing * .25; bell.rotation.x = Math.cos(t * 4.2) * S.bellSwing * .1;
     // motes
@@ -463,7 +502,7 @@
         if (s.p.y <= floorY) { s.p.y = floorY; s.rest = true; s.r.x = -Math.PI / 2; s.r.y = 0; }
       }
       const fade = s.life > 40 ? Math.max(0, 1 - (s.life - 40) / 5) : 1; if (fade <= 0) s.on = false;
-      tmpM.compose(s.p, new THREE.Quaternion().setFromEuler(s.r), new THREE.Vector3(fade, fade, fade)); petals.setMatrixAt(i, tmpM);
+      tmpM.compose(s.p, tmpQ.setFromEuler(s.r), tmpV.set(fade, fade, fade)); petals.setMatrixAt(i, tmpM);
     }
     if (anyP) petals.instanceMatrix.needsUpdate = true;
     // water
@@ -485,7 +524,9 @@
     // day flames flicker
     if (dayFlames) dayFlames.material.size = .13 + Math.sin(t * 9) * .01;
     renderer.render(scene, camera);
+    adapt(iv, nowMs);
   }
+  applyTier();
   loop();
 
   function setDoors(open) { doors.forEach((d) => (d.userData.target = open ? 1 : 0)); }
