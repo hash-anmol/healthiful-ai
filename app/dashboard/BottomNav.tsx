@@ -23,8 +23,8 @@ export function BottomNav() {
   const { authUser } = useAuth();
   const showSadhana = canAccessSadhana(authUser?.email);
 
-  // Hide nav during meditation session and the full-screen Lalita sadhana
-  if (pathname.includes('/sadhana/meditation') || pathname.includes('/sadhana/lalita')) return null;
+  // Hide nav during meditation session and the full-screen guided sadhanas
+  if (pathname.includes('/sadhana/meditation') || pathname.includes('/sadhana/lalita') || pathname.includes('/sadhana/nitya')) return null;
 
   const navRight = showSadhana
     ? NAV_RIGHT

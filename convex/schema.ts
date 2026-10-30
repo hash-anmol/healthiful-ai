@@ -154,4 +154,11 @@ export default defineSchema({
     state: v.string(),
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  // Nitya pranayama and mantra meditation sadhana: same shape as the Lalita table
+  nityaSadhana: defineTable({
+    userId: v.id("users"),
+    state: v.string(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 });

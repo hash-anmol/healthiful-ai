@@ -16,6 +16,7 @@ import type * as gamification from "../gamification.js";
 import type * as lalita from "../lalita.js";
 import type * as mantras from "../mantras.js";
 import type * as meditation from "../meditation.js";
+import type * as nitya from "../nitya.js";
 import type * as users from "../users.js";
 import type * as weightLogs from "../weightLogs.js";
 import type * as workouts from "../workouts.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   lalita: typeof lalita;
   mantras: typeof mantras;
   meditation: typeof meditation;
+  nitya: typeof nitya;
   users: typeof users;
   weightLogs: typeof weightLogs;
   workouts: typeof workouts;

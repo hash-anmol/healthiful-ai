@@ -196,32 +196,50 @@ export default function SadhanaPage() {
         </div>
       </motion.div>
 
-      {/* ═══ Lalita Sahasranama Sadhana ═══ */}
-      <Link
-        href="/dashboard/sadhana/lalita"
-        className="group flex items-center gap-4 rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-sm active:scale-[0.99] transition-transform"
-      >
-        <span className="relative h-20 w-16 shrink-0 overflow-hidden rounded-t-full rounded-b-xl border-2 border-amber-400/70 shadow-md">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/lalita/lalita.jpg"
-            alt="Mother Lalita Tripura Sundari"
-            className="h-full w-full object-cover object-[50%_22%]"
-          />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6B00]/70">
-            Guided sadhana
+      {/* ═══ Guided sadhanas ═══ */}
+      <section className="space-y-2.5">
+        <p className="px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Guided sadhanas</p>
+        <Link
+          href="/dashboard/sadhana/nitya"
+          className="group flex items-center gap-4 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-violet-50 to-amber-50 p-4 shadow-sm active:scale-[0.99] transition-transform"
+        >
+          <span className="relative h-20 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-amber-300/80 bg-gradient-to-b from-indigo-900 via-violet-700 to-amber-400 p-1.5 shadow-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/nitya/yantra.jpg" alt="Sri Chakra" className="h-full w-full rounded-lg object-cover" />
           </span>
-          <span className="block text-lg font-bold leading-tight text-slate-900">
-            Lalita Sahasranama
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500/80">Every night · 40 min</span>
+            <span className="block text-lg font-bold leading-tight text-slate-900">Pranayama &amp; Swadhisthana</span>
+            <span className="block text-xs text-slate-500">OM, breathwork, Nadi Shodhan and mantra meditation at a Himalayan dawn</span>
           </span>
-          <span className="block text-xs text-slate-500">
-            Step-by-step vidhi, 3D altar, daily timer and streak
+          <ChevronRight size={20} className="shrink-0 text-slate-300 group-hover:text-indigo-500" />
+        </Link>
+        <Link
+          href="/dashboard/sadhana/lalita"
+          className="group flex items-center gap-4 rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-sm active:scale-[0.99] transition-transform"
+        >
+          <span className="relative h-20 w-16 shrink-0 overflow-hidden rounded-t-full rounded-b-xl border-2 border-amber-400/70 shadow-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/lalita/lalita.jpg"
+              alt="Mother Lalita Tripura Sundari"
+              className="h-full w-full object-cover object-[50%_22%]"
+            />
           </span>
-        </span>
-        <ChevronRight size={20} className="shrink-0 text-slate-300 group-hover:text-[#FF6B00]" />
-      </Link>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6B00]/70">
+              Daily vidhi
+            </span>
+            <span className="block text-lg font-bold leading-tight text-slate-900">
+              Lalita Sahasranama
+            </span>
+            <span className="block text-xs text-slate-500">
+              Step-by-step vidhi, 3D altar, daily timer and streak
+            </span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-slate-300 group-hover:text-[#FF6B00]" />
+        </Link>
+      </section>
 
       {/* ═══ Breadcrumb Tabs ═══ */}
       <motion.div
