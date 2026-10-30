@@ -284,9 +284,9 @@
 
   // ---------- camera ----------
   const VIEWS = {
-    home: [[0, EYE + .1, 4], [0, EYE - 1.25, -10]],
-    session: [[0, EYE + .05, 3.7], [0, EYE - 1.1, -10]],
-    meditate: [[0, EYE, 3.1], [0, EYE - .8, -6]]
+    home: [[0, EYE + .1, 2.9], [0, EYE - 1.2, -10]],
+    session: [[0, EYE + .05, 2.7], [0, EYE - 1.05, -10]],
+    meditate: [[0, EYE, 2.2], [0, EYE - .75, -6]]
   };
   const cam = { pos: new THREE.Vector3(...VIEWS.home[0]), tgt: new THREE.Vector3(...VIEWS.home[1]) };
   const P = cam.pos.clone(), T = cam.tgt.clone();
