@@ -194,11 +194,11 @@
   add(new THREE.SphereGeometry(.05, 16, 12), M.brass, 0, my0 + mh + .64, mz, mandir);
   add(new THREE.ConeGeometry(.025, .09, 12), M.brass, 0, my0 + mh + .72, mz, mandir);
   // Sri Yantra inside
-  const yantra = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), new THREE.MeshBasicMaterial({ map: yantraTex, color: 0xb0a090 }));
+  const yantra = new THREE.Mesh(new THREE.PlaneGeometry(.62, .62), new THREE.MeshBasicMaterial({ map: yantraTex, color: 0x908070 }));
   yantra.position.set(0, my0 + .06 + mh / 2 + .03, mz - md / 2 + .02); mandir.add(yantra);
   { const yb = .62 / 2 + .012; [[0, yb, .64, .02], [0, -yb, .64, .02], [yb, 0, .02, .64], [-yb, 0, .02, .64]].forEach(([x, y, w, h]) => add(new THREE.BoxGeometry(w, h, .02), M.brass, x, yantra.position.y + y, yantra.position.z + .004, mandir)); }
   const yGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff6a3a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: .25 }));
-  yGlow.scale.set(1.3, 1.3, 1); yGlow.position.copy(yantra.position).add(new THREE.Vector3(0, 0, .05)); mandir.add(yGlow);
+  yGlow.scale.set(1.05, 1.05, 1); yGlow.position.copy(yantra.position).add(new THREE.Vector3(0, 0, .05)); mandir.add(yGlow);
   const yLight = new THREE.PointLight(0xff5a30, .4, 2.2, 2); yLight.position.set(0, 1.0, mz + .05); scene.add(yLight);
   // doors (hinged)
   const doors = [];
@@ -240,7 +240,7 @@
 
   // Ganesh plaque on the left of the chowki
   const ganesh = new THREE.Mesh(new THREE.CircleGeometry(.15, 48), new THREE.MeshStandardMaterial({ map: ganeshTex, roughness: .6, emissive: 0xffffff, emissiveMap: ganeshTex, emissiveIntensity: .08 }));
-  ganesh.position.set(-.76, .7, chowkiZ - .15); ganesh.rotation.y = .25; scene.add(ganesh);
+  ganesh.position.set(-.76, .7, chowkiZ - .15); ganesh.rotation.y = -.1; scene.add(ganesh);
   add(new THREE.BoxGeometry(.06, .2, .06), M.wood, -.76, .6, chowkiZ - .19);
   const gGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffa040, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
   gGlow.scale.set(.7, .7, 1); gGlow.position.set(-.76, .7, chowkiZ - .17); scene.add(gGlow);
@@ -372,9 +372,9 @@
     dawn:   [[.7, 1.6, .9], [-1.6, 1.35, -2.0]],
     doors:  [[0, 1.12, -.35], [0, .98, -2.45]],
     aasan:  [[0, 1.8, 1.1], [0, .15, -.4]],
-    water:  [[-.32, 1.0, -.95], [-.6, .58, -2.1]],
+    water:  [[-1.05, 1.2, -1.3], [-.64, .55, -2.08]],
     lamp:   [[.18, .98, -1.0], [0, .66, -2.1]],
-    ganesh: [[-.42, 1.0, -1.05], [-.76, .7, -2.45]],
+    ganesh: [[-1.3, .95, -1.55], [-.76, .72, -2.45]],
     altar:  [[0, 1.3, .25], [0, .9, -2.3]],
     earth:  [[0, 1.55, .7], [0, .05, -1.0]],
     yantra: [[0, 1.05, -.75], [0, 1.0, -2.5]],
@@ -475,8 +475,8 @@
     fill.intensity = .15 + .25 * S.lamp;
     // yantra + ganesh glow
     S.yantra = damp(S.yantra, S.yantraT, 1.5, dt);
-    yGlow.material.opacity = S.yantra * (1 + Math.sin(t * 1.3) * .1); yLight.intensity = S.yantra * 1.4;
-    yantra.material.color.setScalar(.55 + S.yantra * .6);
+    yGlow.material.opacity = S.yantra * .3 * (1 + Math.sin(t * 1.3) * .1); yLight.intensity = S.yantra * .5;
+    yantra.material.color.setScalar(.5 + S.yantra * .2);
     S.ganesh = damp(S.ganesh, S.ganeshT, 1.5, dt); gGlow.material.opacity = S.ganesh * .7; ganesh.material.emissiveIntensity = .08 + S.ganesh * .3;
     // pulses
     for (const k in S.pulse) S.pulse[k] = Math.max(0, S.pulse[k] - dt * .35);
