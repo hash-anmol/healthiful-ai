@@ -1,0 +1,1049 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a0d1e"></head><body><title>Nitya Sadhana</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Mukta:wght@300;400;500;600&family=Tiro+Devanagari+Sanskrit&display=swap">
+<style>/* The Himalayan dawn fills the screen; a quiet panel sits to the right on iPad landscape and
+   at the bottom in portrait. One committed palette: pre-dawn indigo with saffron for action. */
+:root {
+  --night: #0a0d1e;
+  --night-2: #141834;
+  --ink: #eef0f7;
+  --ink-2: #c8cce0;
+  --muted: #8f94b0;
+  --saffron: #f2a94e;
+  --saffron-deep: #b9611f;
+  --gold: #e8c27a;
+  --leaf: #9cc48a;
+  --line: rgba(238, 240, 247, 0.12);
+  --line-2: rgba(238, 240, 247, 0.22);
+  --f-display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --f-ui: "Mukta", -apple-system, system-ui, sans-serif;
+  --f-deva: "Tiro Devanagari Sanskrit", "Kohinoor Devanagari", serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--night); color: var(--ink); font-family: var(--f-ui); font-size: 17px; line-height: 1.5;
+  overflow: hidden; overscroll-behavior: none; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+button { cursor: pointer; border: 0; background: none; color: inherit; font: inherit; touch-action: manipulation; }
+input, textarea { font: inherit; color: inherit; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+#app { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; pointer-events: none; }
+.topbar {
+  display: flex; align-items: center; gap: 12px; position: relative; z-index: 3; pointer-events: none;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px); padding-bottom: 6px;
+  padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+.topbar > * { pointer-events: auto; }
+.topbar .grow { flex: 1; pointer-events: none; }
+.icon-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(8, 10, 24, .38); border: 1px solid var(--line); }
+.icon-btn svg { width: 20px; height: 20px; }
+main { flex: 1; position: relative; min-height: 0; pointer-events: none; }
+
+/* home column */
+.side {
+  box-sizing: border-box; position: absolute; right: 0; top: 0; bottom: 0; width: min(620px, 52vw); display: flex; flex-direction: column;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 70px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
+  padding-left: 120px; padding-right: max(44px, env(safe-area-inset-right, 0px));
+  background: linear-gradient(to left, rgba(8, 10, 26, .9) 0%, rgba(8, 10, 26, .82) 70%, rgba(8, 10, 26, 0) 100%);
+  overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; pointer-events: auto; touch-action: pan-y;
+}
+.side::-webkit-scrollbar { display: none; }
+.inner { margin-block: auto; display: flex; flex-direction: column; gap: 24px; align-items: flex-start; width: 100%; }
+.eyebrow { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 500; }
+.day { display: flex; align-items: baseline; gap: 12px; }
+.day b { font-family: var(--f-display); font-weight: 500; font-size: 68px; line-height: .95; letter-spacing: -.01em; }
+.day span { color: var(--muted); font-size: 18px; }
+.q { font-family: var(--f-display); font-weight: 500; font-size: 40px; line-height: 1.08; margin: 0; text-wrap: balance; }
+.line { margin: 0; color: var(--ink-2); font-size: 18px; max-width: 34ch; }
+.line b { color: var(--ink); font-weight: 500; }
+.quiet { margin: 0; color: var(--muted); font-size: 15px; max-width: 38ch; }
+.row { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.col { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; padding: 0 30px; border-radius: 99px; font-size: 18px; font-weight: 500; letter-spacing: .01em; }
+.btn-primary { background: linear-gradient(180deg, #f6b862, var(--saffron-deep)); color: #1d0f04; box-shadow: 0 14px 34px -14px rgba(242, 169, 78, .8); }
+.btn-ghost { background: rgba(238, 240, 247, .08); border: 1px solid var(--line-2); }
+.btn-sm { min-height: 44px; padding: 0 20px; font-size: 16px; }
+.btn[disabled] { opacity: .45; cursor: default; }
+.link { color: var(--gold); text-decoration: underline; text-underline-offset: 4px; padding: 4px 0; font-size: 15px; }
+
+details.tonight { width: 100%; max-width: 380px; border-top: 1px solid var(--line); padding-top: 14px; }
+details.tonight summary { cursor: pointer; color: var(--ink-2); font-size: 15px; list-style: none; display: flex; justify-content: space-between; }
+details.tonight summary::-webkit-details-marker { display: none; }
+details.tonight summary::after { content: "+"; color: var(--muted); }
+details.tonight[open] summary::after { content: "–"; }
+.plist { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.plist div { display: grid; grid-template-columns: 1fr auto; gap: 12px; font-size: 15px; color: var(--ink-2); }
+.plist i { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.lamps { display: grid; grid-template-columns: repeat(10, 14px); gap: 7px; }
+.lamps i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line-2); }
+.lamps i.lit { background: radial-gradient(circle at 50% 40%, #ffe3a8, var(--saffron) 60%, var(--saffron-deep)); border-color: transparent; box-shadow: 0 0 10px rgba(242, 169, 78, .55); }
+.lamps i.miss { border-style: dashed; opacity: .55; }
+.lamps i.today { outline: 1px solid var(--gold); outline-offset: 2px; }
+
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg button { min-height: 46px; padding: 0 20px; border-radius: 99px; border: 1px solid var(--line-2); color: var(--ink-2); }
+.seg button.on { background: rgba(242, 169, 78, .16); border-color: var(--saffron); color: var(--ink); }
+.stepper { display: flex; align-items: center; gap: 20px; }
+.stepper b { font-family: var(--f-display); font-size: 56px; font-weight: 500; min-width: 2ch; text-align: center; line-height: 1; }
+.stepper small { color: var(--muted); font-size: 15px; }
+.round { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line-2); font-size: 24px; display: grid; place-items: center; }
+.dots { display: flex; gap: 8px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); }
+.dots i.on { background: var(--gold); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--muted); }
+
+/* session */
+#session { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; pointer-events: none; }
+#session > * { pointer-events: auto; }
+.s-top {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 14px); padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+.track { display: flex; gap: 4px; }
+.track span { height: 3px; border-radius: 99px; background: rgba(238, 240, 247, .16); overflow: hidden; position: relative; }
+.track span i { position: absolute; inset: 0; width: 0; background: var(--gold); }
+.clock { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 15px; min-width: 5ch; text-align: right; }
+.stage {
+  margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center;
+  padding: 120px max(24px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 28px) max(24px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(to top, rgba(6, 8, 20, .82), rgba(6, 8, 20, .55) 60%, rgba(6, 8, 20, 0));
+}
+.ph-name { font-family: var(--f-display); font-size: 36px; font-weight: 500; margin: 0; line-height: 1.05; }
+.ph-name small { display: block; font-family: var(--f-ui); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.cue { margin: 0; color: var(--ink-2); max-width: 40ch; font-size: 17px; min-height: 3em; text-wrap: balance; }
+.s-foot { display: flex; gap: 14px; align-items: center; }
+
+.pacer-wrap { display: flex; align-items: center; gap: 22px; }
+.pacer { position: relative; width: 200px; height: 200px; display: grid; place-items: center; }
+.pacer .ring {
+  position: absolute; inset: 0; border-radius: 50%; transform: scale(.5);
+  background: radial-gradient(circle, rgba(242, 169, 78, .28), rgba(242, 169, 78, .06) 62%, transparent 70%);
+  border: 1.5px solid rgba(232, 194, 122, .7); box-shadow: 0 0 40px rgba(242, 169, 78, .25);
+}
+.pacer .core { position: relative; display: flex; flex-direction: column; align-items: center; }
+.pacer .core b { font-family: var(--f-display); font-size: 30px; font-weight: 500; line-height: 1; }
+.pacer .core span { color: var(--muted); font-size: 14px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.nost { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; color: var(--muted); font-weight: 500; transition: all .4s; }
+.nost.on { color: #1d0f04; background: var(--gold); border-color: var(--gold); box-shadow: 0 0 22px rgba(232, 194, 122, .6); }
+.nost[hidden] { display: none; }
+
+.orb { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 214, 110, .95), rgba(242, 169, 78, .45) 45%, rgba(242, 169, 78, 0) 70%); animation: orb 9s ease-in-out infinite; }
+@keyframes orb { 0%, 100% { transform: scale(.85); opacity: .75; } 50% { transform: scale(1.05); opacity: 1; } }
+
+#dim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .78); display: grid; place-items: end center; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); color: rgba(238, 240, 247, .35); font-size: 14px; }
+
+/* dialogs */
+.overlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(4, 6, 16, .74); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.dialog { width: min(540px, 100%); max-height: calc(100% - 40px); overflow-y: auto; background: var(--night-2); border: 1px solid var(--line-2); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box; overscroll-behavior: contain; }
+.dialog h2 { font-family: var(--f-display); font-weight: 500; font-size: 32px; margin: 0; line-height: 1.1; }
+.dialog h3 { margin: 0; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 500; }
+.dialog p { margin: 0; color: var(--ink-2); }
+.sec { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+.prow { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+.prow .lbl { display: flex; flex-direction: column; }
+.prow .lbl small { color: var(--muted); font-size: 13px; }
+.mini { display: flex; align-items: center; gap: 10px; }
+.mini button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-2); font-size: 18px; }
+.mini b { min-width: 5ch; text-align: center; font-weight: 500; font-variant-numeric: tabular-nums; }
+.toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 40px; }
+.sw { width: 52px; height: 30px; border-radius: 99px; background: rgba(238, 240, 247, .16); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); transition: transform .2s; }
+.sw.on { background: var(--saffron); }
+.sw.on::after { transform: translateX(22px); }
+.hint { font-size: 14px; color: var(--muted); margin: 0; }
+
+#toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); transform: translate(-50%, 20px); z-index: 50; background: rgba(20, 24, 52, .94); border: 1px solid var(--line-2); padding: 12px 20px; border-radius: 99px; opacity: 0; transition: all .3s; pointer-events: none; font-size: 15px; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+[hidden] { display: none !important; }
+
+@media (orientation: portrait), (max-width: 899px) {
+  .side { top: auto; left: 0; right: 0; width: auto; height: 62%; padding: 48px max(28px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 30px) max(28px, env(safe-area-inset-left, 0px)); background: linear-gradient(to top, rgba(8, 10, 26, .92) 0%, rgba(8, 10, 26, .85) 62%, rgba(8, 10, 26, 0) 100%); }
+  .day b { font-size: 56px; }
+  .q { font-size: 34px; }
+}
+@media (max-width: 560px) { .pacer { width: 170px; height: 170px; } .ph-name { font-size: 30px; } .nost { width: 40px; height: 40px; } .pacer-wrap { gap: 12px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* iPad landscape: guidance sits in the right-hand column, like home, so the altar stays in view */
+@media (min-width: 900px) and (orientation: landscape) {
+  .stage {
+    position: absolute; right: 0; top: 0; bottom: 0; width: min(560px, 46vw); box-sizing: border-box; margin: 0; justify-content: center;
+    padding: 90px max(44px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) 100px;
+    background: linear-gradient(to left, rgba(6, 8, 20, .86) 0%, rgba(6, 8, 20, .74) 70%, rgba(6, 8, 20, 0) 100%);
+  }
+  .s-top { position: relative; z-index: 2; }
+}
+</style>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div id="app">
+  <header class="topbar">
+    <button class="icon-btn" id="b-exit" hidden aria-label="Back to Healthiful"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span class="grow"></span>
+    <button class="icon-btn" id="b-settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
+  </header>
+  <main><div class="side" id="home"></div></main>
+</div>
+<div id="session" hidden></div>
+<div id="dim" hidden>Tap to see the screen</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>window.SADHANA_ASSETS={"yantra":"/nitya/yantra.jpg","guru":"/nitya/guru.jpg"};</script>
+<script src="/nitya/three.min.js"></script>
+<script>// Himalaya at Brahma muhurta: a rock ledge high above a river valley, a small stone altar with a diya,
+// the Sri Chakra on a wooden board and the guru's picture. Dawn advances with the practice.
+// Exposes window.Scene = { setDawn, breath, view, rest, layout }
+(function () {
+  const canvas = document.getElementById("scene");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dpr = window.devicePixelRatio || 1;
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: dpr < 1.5, powerPreference: "high-performance" });
+  } catch (e) { window.Scene = null; return; }
+  renderer.setPixelRatio(Math.min(dpr, 1.5));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  // no tone mapping, so fog (built-in) and the sky (custom shader) meet at the same colour on the horizon
+  renderer.toneMapping = THREE.NoToneMapping;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 4000);
+  scene.fog = new THREE.FogExp2(0x1d1b3a, 0.0009);
+
+  // ---------- noise ----------
+  function hash(x, y) { let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+  function vnoise(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10), v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function fbm(x, y, o = 5) { let s = 0, a = .5, f = 1; for (let i = 0; i < o; i++) { s += a * vnoise(x * f, y * f); f *= 2.03; a *= .5; } return s; }
+  function ridged(x, y, o = 5) { let s = 0, a = .55, f = 1, w = 1; for (let i = 0; i < o; i++) { let n = 1 - Math.abs(vnoise(x * f, y * f) * 2 - 1); n *= n * w; w = Math.min(1, n * 1.6); s += n * a; f *= 2.1; a *= .5; } return s; }
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
+
+  // ---------- geography ----------
+  const EYE = 56.3; // seated eye height on the ledge
+  const SUN_AZ = 0.42; // radians to the right of straight ahead; the peaks dip there so the sun can rise
+  const riverZ = (x) => -265 + 30 * Math.sin(x * 0.008) + 12 * Math.sin(x * 0.023 + 1.3);
+  const notch = (x, z, depth, width) => { const a = Math.atan2(x, -z); return 1 - depth * Math.exp(-((a - SUN_AZ) ** 2) / (2 * width * width)); };
+  // the riverbed is carved below the valley floor so the water never shows through the ground
+  function valleyH(x, z) { const d = z - riverZ(x), c = smooth(8, 30, Math.abs(d)); return slopeH(x, z, d) * c - 1.2 * (1 - c); }
+  function slopeH(x, z, d) {
+    if (d > 0) { // our side: rises to the spur we sit on
+      const spur = 18 * Math.exp(-(x * x) / (2 * 40 * 40)) * smooth(-40, -12, z);
+      return 22 * Math.pow(smooth(8, 150, d), 1.5) * (.8 + .4 * fbm(x * .01, z * .01, 4)) + spur + 2 * fbm(x * .05, z * .05, 3);
+    }
+    const t = smooth(8, 300, -d);
+    const range = .62 + .55 * fbm(x * .0022 + 7, 3.1, 3);
+    const peaks = 185 * Math.pow(t, 1.35) * range * (.5 + .62 * ridged(x * .0042, z * .0042));
+    return peaks * notch(x, z, .6, .1) + 6 * t * fbm(x * .03, z * .03, 3) + 1.5 * fbm(x * .06, z * .06, 2);
+  }
+  function backH(x, z) {
+    const r = ridged(x * .0016 + 3, z * .0016 - 2, 6);
+    const crest = 1 - Math.pow(Math.abs((z + 880) / 260), 2);
+    return Math.max(0, (150 + 330 * r) * Math.max(0, crest)) * notch(x, z, .74, .085);
+  }
+
+  function terrain(w, d, segX, segZ, cx, cz, hf, palette) {
+    const g = new THREE.PlaneGeometry(w, d, segX, segZ); g.rotateX(-Math.PI / 2); g.translate(cx, 0, cz);
+    const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, hf(pos.getX(i), pos.getZ(i)));
+    g.computeVertexNormals();
+    const nrm = g.attributes.normal, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), ny = nrm.getY(i);
+      palette(c, y, ny, fbm(x * .02, z * .02, 3));
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  }
+  const C = { snow: lin("#e9eef6"), rock: lin("#5d5752"), rockD: lin("#3e3a38"), forest: lin("#24331f"), meadow: lin("#3f4a2c"), floor: lin("#4a5034") };
+  const tmpC = new THREE.Color();
+  function paint(snowLine) {
+    return (c, y, ny, n) => {
+      const steep = 1 - ny;
+      if (y > snowLine + (n - .5) * 40 && steep < .55) c.copy(C.snow).lerp(C.rock, steep * .5);
+      else if (y > snowLine * .55 || steep > .45) c.copy(C.rockD).lerp(C.rock, n);
+      else if (y < 8) c.copy(C.floor).lerp(C.meadow, n);
+      else c.copy(C.forest).lerp(C.meadow, n * .6);
+    };
+  }
+  scene.add(terrain(1500, 700, 190, 120, 0, -360, valleyH, paint(135)));
+  scene.add(terrain(3400, 600, 240, 36, 0, -900, backH, paint(250)));
+
+  // ---------- river ----------
+  const riverMat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uSky: { value: new THREE.Color("#3a3560") }, uDeep: { value: new THREE.Color("#0d1420") }, uSun: { value: new THREE.Color("#000000") }, uFog: { value: new THREE.Color("#1d1b3a") }, uFogD: { value: .0009 } },
+    vertexShader: "varying vec2 vUv; varying float vDepth; void main(){ vUv = uv; vec4 mv = modelViewMatrix * vec4(position,1.); vDepth = -mv.z; gl_Position = projectionMatrix * mv; }",
+    fragmentShader: `uniform float uTime; uniform vec3 uSky, uDeep, uSun, uFog; uniform float uFogD; varying vec2 vUv; varying float vDepth;
+      void main(){
+        float edge = 1. - abs(vUv.y - .5) * 2.;
+        float flow = sin(vUv.x * 900. - uTime * 2.2 + sin(vUv.y * 7. + vUv.x * 160.) * 2.) * .5 + .5;
+        float glint = smoothstep(.82, 1., flow) * smoothstep(.1, .6, edge);
+        vec3 col = mix(uDeep, uSky, .55 + .25 * edge) + vec3(.04, .05, .08) + uSun * glint * .35 + vec3(.1, .12, .18) * glint;
+        float f = 1. - exp(-pow(vDepth * uFogD, 2.));
+        gl_FragColor = vec4(mix(col, uFog, f), smoothstep(0., .25, edge));
+      }`,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide
+  });
+  {
+    const N = 420, pos = [], uv = [], idx = [];
+    for (let i = 0; i <= N; i++) {
+      const x = -750 + 1500 * i / N, z = riverZ(x), w = 12 + 4 * Math.sin(x * .017);
+      const dz = (riverZ(x + 1) - riverZ(x - 1)) / 2, len = Math.hypot(1, dz), nx = -dz / len, nz = 1 / len;
+      const y = .15;
+      pos.push(x + nx * w, y, z + nz * w, x - nx * w, y, z - nz * w); uv.push(i / N, 0, i / N, 1);
+      if (i < N) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    scene.add(new THREE.Mesh(g, riverMat));
+  }
+
+  // ---------- sky ----------
+  const skyMat = new THREE.ShaderMaterial({
+    uniforms: { uZenith: { value: new THREE.Color() }, uHorizon: { value: new THREE.Color() }, uGlow: { value: new THREE.Color() }, uSunDir: { value: new THREE.Vector3(0, 0, -1) }, uSunI: { value: 0 } },
+    vertexShader: "varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.); gl_Position = p.xyww; }",
+    fragmentShader: `uniform vec3 uZenith, uHorizon, uGlow, uSunDir; uniform float uSunI; varying vec3 vDir;
+      void main(){
+        vec3 d = normalize(vDir); float h = d.y;
+        vec3 col = mix(uHorizon, uZenith, pow(smoothstep(-.03, .62, h), .55));
+        float s = max(dot(d, uSunDir), 0.);
+        float side = dot(normalize(vec2(d.x, d.z) + 1e-5), normalize(vec2(uSunDir.x, uSunDir.z) + 1e-5)) * .5 + .5;
+        col += uGlow * (pow(s, 5.) * .5 + pow(s, 80.) * .9) * uSunI;
+        col += uGlow * pow(1. - clamp(abs(h) * 3.2, 0., 1.), 3.) * side * side * .55 * uSunI;
+        gl_FragColor = vec4(col, 1.);
+      }`,
+    side: THREE.BackSide, depthWrite: false
+  });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(3000, 40, 20), skyMat); sky.renderOrder = -1; scene.add(sky);
+
+  // stars that fade as the light comes
+  const starMat = new THREE.PointsMaterial({ color: 0xdfe6ff, size: 1.6, sizeAttenuation: false, transparent: true, depthWrite: false, fog: false });
+  {
+    const n = 900, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, e = Math.asin(Math.random() * .92 + .06); p[i * 3] = Math.cos(e) * Math.sin(a) * 2500; p[i * 3 + 1] = Math.sin(e) * 2500; p[i * 3 + 2] = -Math.cos(e) * Math.cos(a) * 2500; }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    scene.add(new THREE.Points(g, starMat));
+  }
+
+  // ---------- soft textures ----------
+  function cvs(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t; }
+  const glowTex = cvs(128, 128, (g, w) => { const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); r.addColorStop(0, "rgba(255,255,255,1)"); r.addColorStop(.25, "rgba(255,255,255,.55)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.fillRect(0, 0, w, w); });
+  const mistTex = cvs(256, 128, (g, w, h) => {
+    for (let i = 0; i < 26; i++) { const x = rnd(.15, .85) * w, y = rnd(.35, .65) * h, r = rnd(20, 54); const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, "rgba(255,255,255,.22)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+  });
+  const flameTex = cvs(64, 128, (g, w, h) => {
+    const r = g.createRadialGradient(w / 2, h * .66, 2, w / 2, h * .58, h * .46);
+    r.addColorStop(0, "rgba(255,255,236,1)"); r.addColorStop(.3, "rgba(255,206,110,.95)"); r.addColorStop(.62, "rgba(255,120,30,.5)"); r.addColorStop(1, "rgba(255,80,0,0)");
+    g.fillStyle = r; g.beginPath(); g.moveTo(w / 2, 4); g.bezierCurveTo(w * .95, h * .5, w * .85, h * .95, w / 2, h - 4); g.bezierCurveTo(w * .15, h * .95, w * .05, h * .5, w / 2, 4); g.fill();
+  });
+
+  // sun: a soft glow and a core; mountains hide it until it clears the gap in the peaks
+  const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffa060, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  const sunCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xfff1d0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  sunGlow.scale.set(700, 700, 1); sunCore.scale.set(85, 85, 1); scene.add(sunGlow, sunCore);
+
+  // valley mist and a few high clouds
+  const mists = [];
+  for (let i = 0; i < 16; i++) {
+    const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, color: 0x9aa0c0, transparent: true, depthWrite: false, opacity: .3 }));
+    const x = rnd(-600, 600); m.position.set(x, rnd(28, 52), riverZ(x) - rnd(40, 120)); m.scale.set(rnd(160, 260), rnd(30, 52), 1);
+    m.userData.v = rnd(1.2, 3.2); mists.push(m); scene.add(m);
+  }
+  const clouds = [];
+  for (let i = 0; i < 7; i++) {
+    const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, color: 0x8a7aa0, transparent: true, depthWrite: false, opacity: .5, fog: false }));
+    m.position.set(rnd(-1600, 1600), rnd(380, 620), rnd(-1700, -1400)); m.scale.set(rnd(500, 900), rnd(60, 110), 1); m.userData.v = rnd(.5, 1.4);
+    clouds.push(m); scene.add(m);
+  }
+
+  // ---------- the ledge: a weathered, rounded outcrop that falls away just past the altar ----------
+  const SEAT = 55; // where the altar stone rests
+  function boulder(radius, detail, sx, sy, sz, seed, rough) {
+    const g = new THREE.IcosahedronGeometry(radius, detail), p = g.attributes.position, col = new Float32Array(p.count * 3), c = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+      let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const n = fbm(x * .45 + seed, z * .45 + y * .3, 5), k = 1 + (n - .5) * rough;
+      x *= sx * k; y *= sy * k; z *= sz * k;
+      p.setXYZ(i, x, y, z);
+      // stone with darker cracks and patches of lichen
+      const v = fbm(x * 1.3 + seed, z * 1.3 + y, 4);
+      c.copy(lin("#5b544d")).lerp(lin("#8d8274"), v);
+      if (fbm(x * .7 + 2 + seed, z * .7, 3) > .6) c.lerp(lin("#6c7444"), .45);
+      if (v < .32) c.lerp(lin("#2e2a27"), .5);
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    }
+    g.computeVertexNormals(); g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  }
+  const crag = boulder(4.6, 5, 1.6, .55, .92, 3, .5); crag.position.set(0, SEAT - 2.35, 2.2); scene.add(crag);
+  [[-6.2, .9, .75, 7], [6.8, .6, .8, 11], [-2.7, -1.3, .4, 17], [3, -1.7, .5, 23], [9, 3.5, 1.3, 29]].forEach(([x, z, r, seed]) => {
+    const b = boulder(r, 3, 1.3, .7, 1, seed, 1.1); b.position.set(x, SEAT - r * .45, z); b.rotation.y = seed; scene.add(b);
+  });
+  // ---------- altar ----------
+  const ASSETS = window.SADHANA_ASSETS || {};
+  const loadTex = (src) => { const t = new THREE.TextureLoader().load(src); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t; };
+  const wood = new THREE.MeshStandardMaterial({ color: 0x6a3f22, roughness: .7 });
+  const woodDark = new THREE.MeshStandardMaterial({ color: 0x3d2414, roughness: .75 });
+  const stone = new THREE.MeshStandardMaterial({ color: 0x8a7f72, roughness: .95 });
+  const brass = new THREE.MeshStandardMaterial({ color: 0xc9a050, roughness: .35, metalness: .8 });
+  const AZ = .15; // altar centre z, near the front of the seat
+  const put = (parent, geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(1.7, .5, .8), stone); slab.position.set(0, SEAT - .09, AZ); scene.add(slab);
+  const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.2, .5), new THREE.MeshStandardMaterial({ color: 0xa8321f, roughness: .9 })); cloth.rotation.x = -Math.PI / 2; cloth.position.set(0, SEAT + .162, AZ + .05); scene.add(cloth);
+
+  // the Sri Chakra on a traditional wooden board, standing at the back of the altar
+  const yantraTex = ASSETS.yantra ? loadTex(ASSETS.yantra) : null;
+  const board = new THREE.Group(); board.position.set(0, SEAT + .16, AZ - .26); board.rotation.x = -.14; scene.add(board);
+  put(board, new THREE.BoxGeometry(.7, .78, .05), wood, 0, .39, 0);
+  put(board, new THREE.BoxGeometry(.78, .06, .09), woodDark, 0, .79, 0);
+  put(board, new THREE.BoxGeometry(.78, .05, .12), woodDark, 0, .025, .02);
+  const yantraMat = new THREE.MeshStandardMaterial({ map: yantraTex, color: yantraTex ? 0xffffff : 0xd8b070, roughness: .7, emissive: 0xffffff, emissiveMap: yantraTex, emissiveIntensity: .12 });
+  const yantra = new THREE.Mesh(new THREE.PlaneGeometry(.56, .56), yantraMat); yantra.position.set(0, .42, .027); board.add(yantra);
+  [[0, .72, .56, .025], [0, .12, .56, .025], [-.29, .42, .025, .62], [.29, .42, .025, .62]].forEach(([x, y, w, h]) => put(board, new THREE.BoxGeometry(w, h, .02), brass, x, y, .03));
+
+  // the guru's picture, standing at the left of the altar
+  if (ASSETS.guru) {
+    const gt = loadTex(ASSETS.guru), pw = .36, ph = pw * (543 / 600);
+    const frame = new THREE.Group(); frame.position.set(-.6, SEAT + .16, AZ - .12); frame.rotation.set(-.1, .42, 0); scene.add(frame);
+    put(frame, new THREE.BoxGeometry(pw + .06, ph + .06, .03), woodDark, 0, ph / 2 + .05, 0);
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: gt, roughness: .7, emissive: 0xffffff, emissiveMap: gt, emissiveIntensity: .1 }));
+    pic.position.set(0, ph / 2 + .05, .017); frame.add(pic);
+    // small marigold garland along the top edge
+    const mg = new THREE.InstancedMesh(new THREE.SphereGeometry(.014, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffa21a, roughness: .8 }), 15), m = new THREE.Matrix4();
+    for (let i = 0; i < 15; i++) { const t = i / 14; m.makeTranslation(-pw / 2 + t * pw, ph + .085 - Math.sin(t * Math.PI) * .05, .03); mg.setMatrixAt(i, m); }
+    frame.add(mg);
+  }
+
+  // the diya
+  const diyaGeo = new THREE.LatheGeometry([[0, 0], [.05, 0], [.075, .02], [.085, .045], [.07, .05], [.055, .03], [0, .03]].map(([x, y]) => new THREE.Vector2(x, y)), 28);
+  const diya = new THREE.Mesh(diyaGeo, new THREE.MeshStandardMaterial({ color: 0x9c4a26, roughness: .85 })); diya.position.set(0, SEAT + .162, AZ + .14); scene.add(diya);
+  const flamePos = new THREE.Vector3(.04, SEAT + .27, AZ + .14);
+  const flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: flameTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  flame.position.copy(flamePos); flame.scale.set(.05, .1, 1); scene.add(flame);
+  const flameGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffa040, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .55 }));
+  flameGlow.position.copy(flamePos); flameGlow.scale.set(.6, .6, 1); scene.add(flameGlow);
+  const lamp = new THREE.PointLight(0xffa04a, 1.6, 5, 1.8); lamp.position.copy(flamePos).add(new THREE.Vector3(0, .05, .1)); scene.add(lamp);
+  // a few marigold heads on the cloth
+  {
+    const fm = new THREE.InstancedMesh(new THREE.SphereGeometry(.03, 10, 8), new THREE.MeshStandardMaterial({ color: 0xff9a14, roughness: .8 }), 9), m = new THREE.Matrix4();
+    [[-.36, .1], [-.3, .2], [-.22, .14], [.26, .16], [.33, .08], [.38, .2], [-.12, .25], [.14, .26], [.0, .3]].forEach(([x, z], i) => { m.makeScale(1, .7, 1).setPosition(x, SEAT + .18, AZ + z); fm.setMatrixAt(i, m); });
+    scene.add(fm);
+  }
+
+  // ---------- light ----------
+  const hemi = new THREE.HemisphereLight(0x26305a, 0x0c0a10, .55); scene.add(hemi);
+  const sunL = new THREE.DirectionalLight(0xff6a30, 0); scene.add(sunL);
+  const moon = new THREE.DirectionalLight(0xaebcff, .6); moon.position.set(-60, 55, -60); scene.add(moon);
+
+  // dawn palette: p = 0 (deep night blue) to 1 (sun above the gap in the peaks)
+  const STOPS = [
+    { p: 0, zen: "#0a1330", hor: "#2e2b58", glow: "#6a3c66", hs: "#3a4880", sunc: "#ff4a20", hi: .95, si: 0, gi: .3, mist: "#4f4f7c", cloud: "#34325a", star: 1 },
+    { p: .35, zen: "#16275a", hor: "#644a7c", glow: "#d0706a", hs: "#56689c", sunc: "#ff5a2a", hi: 1.05, si: .12, gi: .6, mist: "#6a5f88", cloud: "#8a5a7a", star: .45 },
+    { p: .68, zen: "#284a88", hor: "#e0946e", glow: "#ffae6c", hs: "#8a9cc8", sunc: "#ff9450", hi: 1.05, si: .75, gi: .95, mist: "#c8a6a0", cloud: "#f0a080", star: 0 },
+    { p: 1, zen: "#4a78b8", hor: "#f5c690", glow: "#ffd698", hs: "#b4c4e0", sunc: "#ffc888", hi: 1.25, si: 1.45, gi: 1.1, mist: "#e6cbb4", cloud: "#ffd0a8", star: 0 }
+  ];
+  const ca = new THREE.Color(), cb = new THREE.Color();
+  function mixHex(k, p, out) {
+    let i = 0; while (i < STOPS.length - 2 && p > STOPS[i + 1].p) i++;
+    const a = STOPS[i], b = STOPS[i + 1], t = Math.min(1, Math.max(0, (p - a.p) / (b.p - a.p)));
+    if (typeof a[k] === "number") return a[k] + (b[k] - a[k]) * t;
+    return out.copy(ca.set(a[k])).lerp(cb.set(b[k]), t);
+  }
+  const sunDir = new THREE.Vector3();
+  const work = { zen: new THREE.Color(), hor: new THREE.Color(), glow: new THREE.Color(), hs: new THREE.Color(), sunc: new THREE.Color(), mist: new THREE.Color(), cloud: new THREE.Color() };
+  function applyDawn(p) {
+    const el = (-4.5 + 13 * p) * Math.PI / 180;
+    sunDir.set(Math.sin(SUN_AZ) * Math.cos(el), Math.sin(el), -Math.cos(SUN_AZ) * Math.cos(el));
+    for (const k in work) mixHex(k, p, work[k]);
+    skyMat.uniforms.uZenith.value.copy(work.zen); skyMat.uniforms.uHorizon.value.copy(work.hor); skyMat.uniforms.uGlow.value.copy(work.glow);
+    skyMat.uniforms.uSunDir.value.copy(sunDir); skyMat.uniforms.uSunI.value = mixHex("gi", p);
+    scene.fog.color.copy(work.hor).convertSRGBToLinear();
+    riverMat.uniforms.uSky.value.copy(work.hor).lerp(work.zen, .35); riverMat.uniforms.uFog.value.copy(work.hor); riverMat.uniforms.uSun.value.copy(work.glow).multiplyScalar(mixHex("si", p));
+    hemi.color.copy(work.hs).convertSRGBToLinear(); hemi.intensity = mixHex("hi", p);
+    moon.intensity = .6 * (1 - smooth(.3, .8, p));
+    sunL.color.copy(work.sunc).convertSRGBToLinear(); sunL.intensity = mixHex("si", p); sunL.position.copy(sunDir).multiplyScalar(100);
+    sunGlow.material.color.copy(work.glow); sunGlow.material.opacity = Math.min(1, .25 + p);
+    sunCore.material.opacity = smooth(.25, .6, p);
+    starMat.opacity = mixHex("star", p);
+    mists.forEach((m) => { m.material.color.copy(work.mist); m.material.opacity = .16 + .12 * p; });
+    clouds.forEach((m) => m.material.color.copy(work.cloud));
+  }
+
+  // ---------- camera ----------
+  const VIEWS = {
+    home: [[0, EYE + .1, 4], [0, EYE - 1.25, -10]],
+    session: [[0, EYE + .05, 3.7], [0, EYE - 1.1, -10]],
+    meditate: [[0, EYE, 3.1], [0, EYE - .8, -6]]
+  };
+  const cam = { pos: new THREE.Vector3(...VIEWS.home[0]), tgt: new THREE.Vector3(...VIEWS.home[1]) };
+  const P = cam.pos.clone(), T = cam.tgt.clone();
+  let layoutMode = "side", viewKey = "home", portrait = false, sizeW = 0, sizeH = 0;
+  // portrait screens are narrow: sit a little further back so the peaks fit above the altar
+  function placeCam() { const v = VIEWS[viewKey] || VIEWS.home; cam.pos.set(v[0][0], v[0][1] + (portrait ? .15 : 0), v[0][2] + (portrait ? 1.8 : 0)); cam.tgt.set(v[1][0], v[1][1] + (portrait ? 1.6 : 0), v[1][2]); }
+  // rest mode: when nothing on screen needs the scene, stop rendering once it has settled
+  let wantRest = false, restFrames = -1, looping = true;
+  function layout(mode) {
+    layoutMode = mode || layoutMode;
+    const w = innerWidth, h = innerHeight; sizeW = w; sizeH = h;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    const wide = w >= 900 && w > h;
+    if (portrait !== h > w) { portrait = h > w; placeCam(); }
+    if (layoutMode === "full") camera.clearViewOffset();
+    else if (wide) camera.setViewOffset(w, h, w * .2, 0, w, h);
+    else camera.setViewOffset(w, h, 0, h * (w < 560 ? .26 : .22), w, h);
+    camera.fov = wide ? 50 : (w < 560 ? 70 : 60);
+    camera.updateProjectionMatrix();
+    if (wantRest) wake();
+  }
+  addEventListener("resize", () => layout());
+  layout("side");
+
+  // ---------- adaptive quality: ~30 fps cap; resolution and frame rate step down when frames run long ----------
+  const TIERS = [{ pr: 1.5, gap: 28, ms: 33.3 }, { pr: 1.25, gap: 28, ms: 33.3 }, { pr: 1, gap: 28, ms: 33.3 }, { pr: .85, gap: 42, ms: 50 }, { pr: .7, gap: 58, ms: 66.7 }];
+  let tier = 0, lastAt = 0, warmUntil = 0, win = [], stable = 0, holdMs = 45000, holdUntil = 0;
+  try { tier = Math.max(0, Math.min(TIERS.length - 1, Math.round(+localStorage.getItem("nitya-q")) || 0)); } catch (e) {}
+  if (tier > 0) holdUntil = performance.now() + 60000;
+  function applyTier() {
+    renderer.setPixelRatio(Math.min(dpr, TIERS[tier].pr));
+    warmUntil = performance.now() + 1500; win.length = 0; stable = 0;
+    try { localStorage.setItem("nitya-q", String(tier)); } catch (e) {}
+  }
+  // iv is the time since the previous rendered frame (0 right after a wake-up); the median ignores one-off hitches
+  function adapt(iv, now) {
+    if (!iv || now < warmUntil) { win.length = 0; return; }
+    win.push(Math.min(iv, 1000)); if (win.length < 20) return;
+    win.sort((a, b) => a - b); const med = win[10]; win.length = 0;
+    const ms = TIERS[tier].ms;
+    if (med > ms * 1.35 && tier < TIERS.length - 1) { tier++; holdUntil = now + holdMs; holdMs = Math.min(holdMs * 2, 600000); applyTier(); }
+    else if (med < ms * 1.1) { stable += 20; if (stable >= 240 && tier > 0 && now > holdUntil) { tier--; applyTier(); } }
+    else stable = 0;
+  }
+
+  // ---------- loop ----------
+  const clock = new THREE.Clock(); let t = 0, running = true;
+  let dawn = .06, dawnT = .06, breathV = 0, breathT = 0;
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; lastAt = 0; if (running) kick(); });
+  function kick() { if (looping) return; looping = true; lastAt = 0; clock.getDelta(); requestAnimationFrame(loop); }
+  function wake() { restFrames = wantRest ? 90 : -1; kick(); }
+  const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
+  let ptrX = 0, ptrY = 0, sx = 0, sy = 0;
+  addEventListener("pointermove", (e) => { ptrX = e.clientX / innerWidth - .5; ptrY = e.clientY / innerHeight - .5; });
+  function loop() {
+    if (!running || restFrames === 0) { looping = false; return; }
+    requestAnimationFrame(loop);
+    const now = performance.now();
+    if (now - lastAt < TIERS[tier].gap) return;
+    const iv = lastAt ? now - lastAt : 0; lastAt = now;
+    if (innerWidth !== sizeW || innerHeight !== sizeH) layout(); // in case a resize event was missed
+    if (restFrames > 0) restFrames--;
+    const dt = Math.min(clock.getDelta(), .06); t += dt;
+    // dawn eases toward its target so the light never jumps
+    if (Math.abs(dawn - dawnT) > 1e-4) { dawn = damp(dawn, dawnT, .8, dt); applyDawn(dawn); }
+    // camera: drift to the chosen view, with a slow breathing sway
+    const m = reduce ? 0 : 1;
+    sx = damp(sx, ptrX, 1.5, dt); sy = damp(sy, ptrY, 1.5, dt);
+    P.lerp(cam.pos, 1 - Math.exp(-1.2 * dt)); T.lerp(cam.tgt, 1 - Math.exp(-1.4 * dt));
+    camera.position.set(P.x + (Math.sin(t * .19) * .02 + sx * .05) * m, P.y + (Math.sin(t * .27) * .012 - sy * .03) * m, P.z);
+    camera.lookAt(T);
+    // breeze
+    const wind = .6 + .4 * Math.sin(t * .23) * Math.sin(t * .071 + 1);
+    mists.forEach((s) => { s.position.x += s.userData.v * dt * (.6 + wind * .4); if (s.position.x > 650) s.position.x = -650; });
+    clouds.forEach((s) => { s.position.x += s.userData.v * dt; if (s.position.x > 1700) s.position.x = -1700; });
+    riverMat.uniforms.uTime.value = t;
+    // diya: flicker, a little lean in the breeze, and a slow swell with the breath
+    breathV = damp(breathV, breathT, 2.2, dt);
+    const fl = 1 + (Math.sin(t * 13) * .05 + Math.sin(t * 7.3) * .05 + Math.sin(t * 21.7) * .03) * (reduce ? .3 : 1);
+    flame.scale.set(.05 * fl, .1 * (2 - fl), 1); flame.position.x = flamePos.x + Math.sin(t * 2.1) * .004 * wind;
+    flameGlow.material.opacity = (.45 + .2 * breathV) * fl; flameGlow.scale.setScalar(.55 + .15 * breathV);
+    lamp.intensity = (1.4 + .5 * breathV) * fl;
+    yantraMat.emissiveIntensity = .12 + .18 * breathV;
+    sunCore.position.copy(camera.position).addScaledVector(sunDir, 2200); sunGlow.position.copy(sunCore.position);
+    renderer.render(scene, camera);
+    adapt(iv, now);
+  }
+  applyDawn(dawn); applyTier();
+  loop();
+
+  window.Scene = {
+    layout,
+    // p: 0 night ... 1 sun risen; instant skips the easing
+    setDawn(p, instant) { dawnT = Math.min(1, Math.max(0, p)); if (instant) { dawn = dawnT; applyDawn(dawn); } wake(); },
+    // v: 0 (empty) ... 1 (full breath): the diya and the Sri Chakra swell gently with it
+    breath(v) { breathT = v; },
+    view(key) { viewKey = key; placeCam(); wake(); },
+    rest(on) { wantRest = !!on; wake(); }
+  };
+})();
+</script>
+<script>// Nitya sadhana: a nightly pranayama and mantra meditation practice kept as a vow of N days.
+// State, setup, home, the timed session (breath pacer, chimes, sound) and settings.
+(function () {
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- time (a "night" runs until 4 AM, so a late sitting counts for the evening it began) ----------
+  const DAY_START = 4;
+  const pad = (n) => String(n).padStart(2, "0");
+  const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const todayKey = () => keyOf(new Date(Date.now() - DAY_START * 3600e3));
+  const keyToUTC = (k) => { const [y, m, d] = k.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+  const diffDays = (a, b) => Math.round((keyToUTC(b) - keyToUTC(a)) / 864e5);
+  const addDays = (k, n) => { const d = new Date(keyToUTC(k) + n * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+  const fmtClock = (sec) => { sec = Math.max(0, Math.ceil(sec)); return `${Math.floor(sec / 60)}:${pad(sec % 60)}`; };
+  const fmtDate = (k) => new Date(keyToUTC(k)).toLocaleDateString([], { day: "numeric", month: "short", timeZone: "UTC" });
+
+  // ---------- the practice ----------
+  const PHASES = {
+    om: { name: "Tuning in", tag: "OM", kind: "free", max: 15,
+      cue: "Exhale completely. Breathe in deeply through the nose, then chant a long OM on the out-breath. Three to five, unhurried.",
+      say: "Tuning in. Exhale completely. Then breathe in deeply, and chant a long Om on the out breath." },
+    belly: { name: "Belly breathing", tag: "Diaphragm", kind: "pace", max: 15, pattern: [["ex", 6], ["in", 4]],
+      cue: "Let the belly rise as you breathe in and soften as you breathe out. The chest stays quiet.",
+      say: "Deep belly breathing. Let the belly rise and fall. Begin by breathing out." },
+    sama: { name: "Sama Vritti", tag: "Equal breath", kind: "pace", max: 20, pattern: [["ex", 4], ["in", 4]],
+      cue: "Four counts in, four counts out, through the nose. No holding.",
+      say: "Sama vritti. Four counts in, four counts out. No holding. Begin with the exhale." },
+    nadi: { name: "Nadi Shodhan", tag: "Alternate nostril", kind: "nadi", max: 20,
+      cue: "Vishnu mudra: fold the index and middle fingers. The thumb closes the right nostril, the ring finger the left.",
+      say: "Nadi shodhan. Form Vishnu mudra. Close the right nostril with your thumb, and breathe out fully through the left." },
+    med: { name: "Swadhisthana", tag: "Mantra meditation", kind: "sit", max: 90,
+      cue: "Let the breath go. Rest your awareness just below the navel. Silently repeat your mantra there, in a warm yellow light.",
+      say: "Let the breath flow on its own. Bring your awareness to Svadhishthana, just below the navel, and silently repeat your mantra there." }
+  };
+  const ORDER = ["om", "belly", "sama", "nadi", "med"];
+  const PREP = 7; // seconds at the start of a paced phase to hear the instruction and settle
+
+  // ---------- state ----------
+  const LS = "nitya-sadhana-v1";
+  const fresh = () => ({
+    v: 1, updatedAt: 0,
+    prefs: { min: { om: 3, belly: 3, sama: 7, nadi: 7, med: 20 }, chime: 10, drone: true, nature: true, tones: true, voice: true, showTimer: false, dim: true },
+    vow: null, logs: {}, history: []
+  });
+  let state = fresh();
+  const merge = (d) => { const f = fresh(); return { ...f, ...d, prefs: { ...f.prefs, ...(d.prefs || {}), min: { ...f.prefs.min, ...((d.prefs && d.prefs.min) || {}) } } }; };
+  try { const raw = localStorage.getItem(LS); if (raw) state = merge(JSON.parse(raw)); } catch (e) {}
+
+  const EMBED = window.parent !== window;
+  let cloud = false, saveTimer = null;
+  function save(now) {
+    state.updatedAt = Date.now();
+    try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+    clearTimeout(saveTimer);
+    const push = () => { if (EMBED && cloud) window.parent.postMessage({ type: "nitya:save", state: JSON.parse(JSON.stringify(state)) }, location.origin); };
+    if (now) push(); else saveTimer = setTimeout(push, 1200);
+  }
+  if (EMBED) {
+    window.addEventListener("message", (e) => {
+      if (e.origin !== location.origin || e.source !== window.parent || e.data?.type !== "nitya:state") return;
+      const remote = e.data.state; cloud = true;
+      if (remote && (remote.updatedAt || 0) > (state.updatedAt || 0)) { state = merge(remote); try { localStorage.setItem(LS, JSON.stringify(state)); } catch (err) {} if (!sess) renderHome(); }
+      else if ((state.updatedAt || 0) > ((remote && remote.updatedAt) || 0)) save(true);
+    });
+    window.parent.postMessage({ type: "nitya:ready" }, location.origin);
+  }
+
+  const done = (k) => state.logs[k]?.status === "done";
+  function status() {
+    const v = state.vow; if (!v) return null;
+    const today = todayKey(), notStarted = today < v.startKey;
+    const dayNo = notStarted ? 0 : diffDays(v.startKey, today) + 1;
+    const doneCount = Object.keys(state.logs).filter((k) => done(k) && k >= v.startKey && diffDays(v.startKey, k) < v.days).length;
+    let streak = 0; for (let k = done(today) ? today : addDays(today, -1); k >= v.startKey && done(k); k = addDays(k, -1)) streak++;
+    const missed = []; if (!notStarted) for (let k = v.startKey; k < today && diffDays(v.startKey, k) < v.days; k = addDays(k, 1)) if (!done(k)) missed.push(k);
+    return { today, notStarted, dayNo, doneCount, streak, missed, tonight: done(today), complete: dayNo > v.days || doneCount >= v.days };
+  }
+  const activePhases = () => ORDER.filter((id) => state.prefs.min[id] > 0);
+  const plannedMin = () => activePhases().reduce((a, id) => a + state.prefs.min[id], 0);
+
+  // ---------- audio: tanpura, wind and river, breath tones, chimes, spoken cues ----------
+  let AC = null, master = null, verb = null, droneBus = null, natureBus = null, droneTimer = null, nextPluck = 0, breathNode = null;
+  function ac() {
+    if (!AC) {
+      try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+      master = AC.createGain(); master.gain.value = .9; master.connect(AC.destination);
+      // a small generated hall, so chimes and the drone have air around them
+      verb = AC.createConvolver(); const len = AC.sampleRate * 3, ir = AC.createBuffer(2, len, AC.sampleRate);
+      for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+      verb.buffer = ir; const vg = AC.createGain(); vg.gain.value = .35; verb.connect(vg); vg.connect(master);
+      droneBus = AC.createGain(); droneBus.gain.value = 0; droneBus.connect(master); droneBus.connect(verb);
+      natureBus = AC.createGain(); natureBus.gain.value = 0; natureBus.connect(master);
+    }
+    if (AC.state === "suspended") AC.resume();
+    return AC;
+  }
+  const SA = 138.59; // C#3
+  function pluck(f, t) {
+    const g = AC.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.2, t + .025); g.gain.exponentialRampToValueAtTime(.0006, t + 5.2);
+    const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 1.4; lp.frequency.setValueAtTime(3400, t); lp.frequency.exponentialRampToValueAtTime(850, t + 3.2);
+    [1, .72, .55, .42, .3, .22, .12].forEach((a, i) => {
+      const o = AC.createOscillator(), og = AC.createGain(); o.frequency.value = f * [1, 2, 3, 4, 5, 6, 8][i] * (1 + (Math.random() - .5) * .0016);
+      og.gain.value = a; o.connect(og); og.connect(lp); o.start(t); o.stop(t + 5.3);
+    });
+    lp.connect(g); g.connect(droneBus);
+  }
+  function setDrone(on) {
+    if (!ac()) return;
+    const t = AC.currentTime; droneBus.gain.cancelScheduledValues(t); droneBus.gain.setValueAtTime(droneBus.gain.value, t);
+    droneBus.gain.linearRampToValueAtTime(on ? .11 : 0, t + (on ? 3 : 1.5));
+    clearInterval(droneTimer); droneTimer = null;
+    if (!on) return;
+    nextPluck = Math.max(nextPluck, t + .1);
+    // Pa (low), Sa, Sa, Sa (lower octave), then a breath of silence
+    const cycle = [[SA * .75, 0], [SA, 1.3], [SA, 2.6], [SA / 2, 3.9]];
+    droneTimer = setInterval(() => { while (nextPluck < AC.currentTime + 1.6) { cycle.forEach(([f, dt]) => pluck(f, nextPluck + dt)); nextPluck += 5.8; } }, 300);
+  }
+  function noiseBuffer(sec, brown) {
+    const b = AC.createBuffer(1, AC.sampleRate * sec, AC.sampleRate), d = b.getChannelData(0); let last = 0;
+    for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + .02 * w) / 1.02; d[i] = last * 3.2; } else d[i] = w; }
+    return b;
+  }
+  let natureBuilt = false;
+  function setNature(on) {
+    if (!ac()) return;
+    if (on && !natureBuilt) {
+      natureBuilt = true;
+      const lfo = (f, depth, param) => { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = f; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); };
+      // wind: brown noise, gusting slowly
+      const w = AC.createBufferSource(); w.buffer = noiseBuffer(6, true); w.loop = true;
+      const wl = AC.createBiquadFilter(); wl.type = "lowpass"; wl.frequency.value = 420; lfo(.05, 260, wl.frequency);
+      const wg = AC.createGain(); wg.gain.value = .5; lfo(.07, .3, wg.gain); lfo(.023, .2, wg.gain);
+      w.connect(wl); wl.connect(wg); wg.connect(natureBus); w.start();
+      // the river far below: a soft band of white noise
+      const r = AC.createBufferSource(); r.buffer = noiseBuffer(5, false); r.loop = true;
+      const rb = AC.createBiquadFilter(); rb.type = "bandpass"; rb.frequency.value = 900; rb.Q.value = .7; lfo(.11, 120, rb.frequency);
+      const rg = AC.createGain(); rg.gain.value = .045; r.connect(rb); rb.connect(rg); rg.connect(natureBus); r.start();
+    }
+    const t = AC.currentTime; natureBus.gain.cancelScheduledValues(t); natureBus.gain.setValueAtTime(natureBus.gain.value, t);
+    natureBus.gain.linearRampToValueAtTime(on ? .5 : 0, t + (on ? 4 : 1.5));
+  }
+  // a soft tone that rises through the in-breath and falls through the out-breath; panned for the nostril
+  function breathTone(dir, dur, side) {
+    stopTone();
+    if (!state.prefs.tones || !ac()) return;
+    const t = AC.currentTime, o = AC.createOscillator(), o2 = AC.createOscillator(), g = AC.createGain(), lp = AC.createBiquadFilter();
+    const lo = SA * 1.5, hi = SA * 2;
+    o.type = "sine"; o2.type = "triangle";
+    o.frequency.setValueAtTime(dir === "in" ? lo : hi, t); o.frequency.linearRampToValueAtTime(dir === "in" ? hi : lo, t + dur);
+    o2.frequency.setValueAtTime((dir === "in" ? lo : hi) / 2, t); o2.frequency.linearRampToValueAtTime((dir === "in" ? hi : lo) / 2, t + dur);
+    lp.type = "lowpass"; lp.frequency.value = 900;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.05, t + .6); g.gain.setValueAtTime(.05, t + Math.max(.7, dur - .7)); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(lp); o2.connect(lp); lp.connect(g);
+    let out = g;
+    if (side && AC.createStereoPanner) { const p = AC.createStereoPanner(); p.pan.value = side === "L" ? -.75 : .75; g.connect(p); out = p; }
+    out.connect(master); o.start(t); o2.start(t); o.stop(t + dur + .05); o2.stop(t + dur + .05);
+    breathNode = { o, o2, g };
+  }
+  function stopTone() { if (!breathNode || !AC) return; const t = AC.currentTime; try { breathNode.g.gain.cancelScheduledValues(t); breathNode.g.gain.setTargetAtTime(0, t, .08); breathNode.o.stop(t + .4); breathNode.o2.stop(t + .4); } catch (e) {} breathNode = null; }
+  // a sweet bell: inharmonic partials with long tails
+  function chime(times = 1, base = 1046.5, gap = 2.6, vol = .16) {
+    if (!ac()) return;
+    for (let n = 0; n < times; n++) {
+      const t = AC.currentTime + .05 + n * gap;
+      [[1, 1, 6], [2.76, .45, 3.2], [5.4, .22, 1.6], [8.93, .08, .8]].forEach(([r, a, d]) => {
+        const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = base * r;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a * vol, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+        o.connect(g); g.connect(master); g.connect(verb); o.start(t); o.stop(t + d + .1);
+      });
+    }
+  }
+  let voice = null;
+  function pickVoice() {
+    if (!window.speechSynthesis) return null;
+    const vs = speechSynthesis.getVoices(); if (!vs.length) return null;
+    return vs.find((v) => /en-IN/i.test(v.lang)) || vs.find((v) => /en-GB/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
+  }
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); };
+  function say(text) {
+    if (!state.prefs.voice || !window.speechSynthesis) return;
+    try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = .86; u.pitch = .95; voice = voice || pickVoice(); if (voice) u.voice = voice; speechSynthesis.speak(u); } catch (e) {}
+  }
+
+  // ---------- wake lock and toast ----------
+  let wakeLock = null;
+  async function keepAwake(on) {
+    try { if (on && !wakeLock && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener?.("release", () => (wakeLock = null)); } else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; } } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && sess) keepAwake(true); });
+  let toastT; function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2600); }
+
+  // =========================================================
+  // SETUP: two short questions
+  // =========================================================
+  const setup = { step: 0, days: 40, custom: false, startOff: 0, med: 20 };
+  function renderSetup(el) {
+    const dots = `<div class="dots">${[0, 1].map((i) => `<i class="${i <= setup.step ? "on" : ""}"></i>`).join("")}</div>`;
+    let body;
+    if (setup.step === 0) {
+      body = `<div class="eyebrow">Nightly practice</div><h2 class="q">How many nights is your vow?</h2>
+        <div class="seg" id="f-days">${[21, 40, 108].map((n) => `<button data-n="${n}" class="${!setup.custom && setup.days === n ? "on" : ""}">${n} nights</button>`).join("")}<button data-n="custom" class="${setup.custom ? "on" : ""}">Other</button></div>
+        ${setup.custom ? `<div class="field" style="max-width:180px"><label for="f-dc">Nights</label><input id="f-dc" type="number" min="1" max="365" value="${setup.days}" class="btn btn-ghost btn-sm" style="text-align:left"></div>` : ""}
+        <p class="quiet">${setup.startOff ? "Begins tomorrow night." : "Begins tonight."} <button class="link" id="f-start">${setup.startOff ? "Begin tonight instead" : "Begin tomorrow instead"}</button></p>
+        <button class="btn btn-primary" id="f-next">Continue</button>`;
+    } else {
+      const other = plannedMin() - state.prefs.min.med;
+      body = `<div class="eyebrow">Meditation</div><h2 class="q">How long will you sit with the mantra?</h2>
+        <div class="stepper"><button class="round" id="f-minus" aria-label="Shorter">–</button><b>${setup.med}</b><small>minutes</small><button class="round" id="f-plus" aria-label="Longer">+</button></div>
+        <p class="line">With pranayama, about <b>${other + setup.med} minutes</b> each night.</p>
+        <div class="row"><button class="btn btn-primary" id="f-go">Begin my vow</button><button class="link" id="f-back">Back</button></div>`;
+    }
+    el.innerHTML = `<div class="inner">${body}${dots}</div>`;
+    el.querySelectorAll("#f-days button").forEach((b) => b.onclick = () => { if (b.dataset.n === "custom") setup.custom = true; else { setup.custom = false; setup.days = +b.dataset.n; } renderSetup(el); });
+    $("#f-dc", el)?.addEventListener("input", (e) => (setup.days = Math.max(1, Math.min(365, Math.round(+e.target.value) || 1))));
+    $("#f-start", el)?.addEventListener("click", () => { setup.startOff = setup.startOff ? 0 : 1; renderSetup(el); });
+    $("#f-next", el)?.addEventListener("click", () => { setup.step = 1; renderSetup(el); });
+    $("#f-back", el)?.addEventListener("click", () => { setup.step = 0; renderSetup(el); });
+    $("#f-minus", el)?.addEventListener("click", () => { setup.med = Math.max(5, setup.med - 5); renderSetup(el); });
+    $("#f-plus", el)?.addEventListener("click", () => { setup.med = Math.min(90, setup.med + 5); renderSetup(el); });
+    $("#f-go", el)?.addEventListener("click", () => {
+      state.prefs.min.med = setup.med;
+      state.vow = { days: setup.days, startKey: addDays(todayKey(), setup.startOff), created: Date.now() };
+      save(true); chime(1); toast(`Your ${setup.days}-night vow begins.`); renderHome();
+    });
+  }
+
+  // =========================================================
+  // HOME
+  // =========================================================
+  function renderHome() {
+    const el = $("#home");
+    window.Scene?.layout("side"); window.Scene?.view("home");
+    const st = status();
+    window.Scene?.setDawn(st?.tonight ? .92 : .2);
+    if (!state.vow) { renderSetup(el); return; }
+    const v = state.vow, mins = plannedMin();
+    let line;
+    if (st.complete) line = `Your ${v.days}-night vow is complete. Pranam.`;
+    else if (st.notStarted) line = `Your vow begins on <b>${fmtDate(v.startKey)}</b>.`;
+    else if (st.tonight) line = `Tonight is complete.${st.streak > 1 ? ` <b>${st.streak}</b> nights in a row.` : ""}`;
+    else line = `Tonight's practice, about <b>${mins} minutes</b>.${st.streak ? ` ${st.streak} ${st.streak === 1 ? "night" : "nights"} in a row.` : ""}`;
+    const lamps = Array.from({ length: v.days }, (_, i) => { const k = addDays(v.startKey, i); return `<i class="${done(k) ? "lit" : k < st.today ? "miss" : ""} ${k === st.today ? "today" : ""}" title="${fmtDate(k)}"></i>`; }).join("");
+    const btn = st.complete ? `<button class="btn btn-primary" id="h-new">Take a new vow</button>`
+      : st.tonight ? `<button class="btn btn-ghost" id="h-go">Sit again</button>`
+      : `<button class="btn btn-primary" id="h-go">Begin</button>`;
+    const list = activePhases().map((id) => `<div><span>${esc(PHASES[id].name)} <span style="color:var(--muted)">· ${esc(PHASES[id].tag)}</span></span><i>${state.prefs.min[id]} min</i></div>`).join("");
+    el.innerHTML = `<div class="inner">
+      <div class="eyebrow">Nitya pranayama · Swadhisthana</div>
+      <div class="day"><b>${st.notStarted ? "Night 0" : `Night ${Math.min(st.dayNo, v.days)}`}</b><span>of ${v.days}</span></div>
+      <p class="line">${line}</p>
+      ${st.missed.length && !st.complete ? `<p class="quiet">${st.missed.length === 1 ? `You missed ${fmtDate(st.missed[0])}.` : `You missed ${st.missed.length} nights.`} Carry on tonight, or restart the vow in Settings.</p>` : ""}
+      ${btn}
+      <div class="lamps" aria-label="${st.doneCount} of ${v.days} nights complete">${lamps}</div>
+      <details class="tonight"><summary>Tonight's practice</summary><div class="plist">${list}</div></details>
+      ${!st.tonight && !st.notStarted && !st.complete ? `<button class="link" id="h-mark">Practised without the app? Mark tonight as done</button>` : ""}
+    </div>`;
+    $("#h-go", el)?.addEventListener("click", begin);
+    $("#h-new", el)?.addEventListener("click", () => openRestart(true));
+    $("#h-mark", el)?.addEventListener("click", () => confirmBox("Mark tonight as done?", "Use this when you sat without the app. It keeps your streak.", "Mark as done", () => { state.logs[todayKey()] = { status: "done", start: Date.now(), dur: 0, manual: true }; save(true); renderHome(); toast("Tonight marked as done."); }));
+  }
+
+  // =========================================================
+  // SESSION
+  // =========================================================
+  let sess = null, tickT = null;
+  // the timeline of one phase: breath segments for paced phases, chime times for the meditation
+  function buildPhase(id) {
+    const ph = PHASES[id], target = state.prefs.min[id] * 60;
+    const p = { id, kind: ph.kind, segs: [], chimes: [], dur: target };
+    if (ph.kind === "pace") {
+      let t = PREP, i = 0; while (t < target) { const [dir, d] = ph.pattern[i % ph.pattern.length]; p.segs.push({ t, d, dir }); t += d; i++; }
+      // finish on an exhale
+      if (p.segs.length && p.segs[p.segs.length - 1].dir !== "ex") { p.segs.push({ t, d: ph.pattern[0][1], dir: "ex" }); t += ph.pattern[0][1]; }
+      p.dur = t;
+    } else if (ph.kind === "nadi") {
+      // start: out through the left; then in left, out right, in right, out left; always end out through the left
+      let t = PREP; p.segs.push({ t, d: 4, dir: "ex", side: "L" }); t += 4;
+      const cyc = [["in", "L"], ["ex", "R"], ["in", "R"], ["ex", "L"]];
+      while (t < target) for (const [dir, side] of cyc) { p.segs.push({ t, d: 4, dir, side }); t += 4; }
+      p.dur = t;
+    } else if (ph.kind === "sit" && state.prefs.chime) {
+      for (let c = state.prefs.chime * 60; c < target - 20; c += state.prefs.chime * 60) p.chimes.push(c);
+    }
+    return p;
+  }
+  function begin() {
+    ac(); // unlock audio inside the tap
+    const plan = activePhases().map(buildPhase); let t0 = 0; plan.forEach((p) => { p.t0 = t0; t0 += p.dur; });
+    sess = { plan, total: t0, acc: 0, runStart: performance.now(), paused: false, pi: -1, si: -1, ci: 0, startedAt: Date.now(), dimmed: false, lastTouch: 0 };
+    setDrone(state.prefs.drone); setNature(state.prefs.nature); keepAwake(true);
+    window.Scene?.layout("side"); window.Scene?.setDawn(.04, true);
+    $("#app").hidden = true; const root = $("#session"); root.hidden = false;
+    root.innerHTML = `<div class="s-top"><button class="icon-btn" id="s-x" aria-label="End"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <div class="track">${plan.map((p) => `<span style="flex:${p.dur}"><i></i></span>`).join("")}</div><span class="clock" id="s-clock"></span></div>
+      <div class="stage" id="s-stage"></div>`;
+    $("#s-x").onclick = endBox;
+    tick(); clearInterval(tickT); tickT = setInterval(tick, 100);
+  }
+  const elapsed = () => sess.acc + (sess.paused ? 0 : (performance.now() - sess.runStart) / 1000);
+
+  function enterPhase(i) {
+    const p = sess.plan[i], ph = PHASES[p.id];
+    sess.pi = i; sess.si = -1; sess.ci = 0;
+    window.Scene?.view(p.kind === "sit" ? "meditate" : "session");
+    const stage = $("#s-stage"); const paced = p.kind === "pace" || p.kind === "nadi";
+    stage.innerHTML = `<h2 class="ph-name"><small>${esc(ph.tag)}</small>${esc(ph.name)}</h2>
+      ${paced ? `<div class="pacer-wrap"><span class="nost" id="n-L" ${p.kind === "nadi" ? "" : "hidden"}>L</span>
+        <div class="pacer"><div class="ring" id="p-ring"></div><div class="core"><b id="p-word">Settle</b><span id="p-count">&nbsp;</span></div></div>
+        <span class="nost" id="n-R" ${p.kind === "nadi" ? "" : "hidden"}>R</span></div>`
+        : p.kind === "sit" ? `<div class="orb" aria-hidden="true"></div>` : ""}
+      <p class="cue" id="s-cue">${esc(ph.cue)}</p>
+      <div class="s-foot"><button class="btn btn-ghost btn-sm" id="s-pause">Pause</button>${i < sess.plan.length - 1 ? `<button class="link" id="s-skip">Next</button>` : ""}</div>`;
+    $("#s-pause").onclick = togglePause;
+    $("#s-skip")?.addEventListener("click", () => skipTo(i + 1));
+    if (i > 0) chime(1, 784, 0, .12);
+    say(ph.say);
+    if (p.kind !== "sit") window.Scene?.breath(0);
+    if (p.kind === "sit") { window.Scene?.breath(.5); sess.lastTouch = performance.now(); }
+  }
+  function applySeg(s, remaining) {
+    const ring = $("#p-ring"); if (!ring) return;
+    ring.style.transition = `transform ${remaining}s cubic-bezier(.42,0,.58,1)`;
+    ring.style.transform = s.dir === "in" ? "scale(1)" : "scale(.5)";
+    $("#p-word").textContent = s.dir === "in" ? "Breathe in" : "Breathe out";
+    if (s.side) {
+      $("#n-L").classList.toggle("on", s.side === "L"); $("#n-R").classList.toggle("on", s.side === "R");
+      $("#s-cue").textContent = `${s.dir === "in" ? "In" : "Out"} through the ${s.side === "L" ? "left" : "right"} nostril.${s.side === "L" ? " Thumb closes the right." : " Ring finger closes the left."}`;
+    }
+    window.Scene?.breath(s.dir === "in" ? 1 : 0);
+    breathTone(s.dir, remaining, s.side);
+  }
+  function tick() {
+    if (!sess) return;
+    const e = elapsed();
+    if (e >= sess.total) return finish();
+    let i = sess.plan.length - 1; while (i > 0 && e < sess.plan[i].t0) i--;
+    if (i !== sess.pi) enterPhase(i);
+    const p = sess.plan[i], pe = e - p.t0;
+    if (p.segs.length && pe >= PREP && !sess.paused) {
+      let si = sess.si < 0 ? 0 : sess.si; while (si < p.segs.length - 1 && pe >= p.segs[si + 1].t) si++;
+      const s = p.segs[si];
+      if (si !== sess.si) { sess.si = si; applySeg(s, s.t + s.d - pe); }
+      const cnt = $("#p-count"); if (cnt) cnt.textContent = String(Math.min(s.d, Math.floor(pe - s.t) + 1));
+    }
+    if (p.kind === "sit") {
+      if (sess.ci < p.chimes.length && pe >= p.chimes[sess.ci]) { sess.ci++; chime(1); }
+      // dim the screen while sitting; a tap brings it back for a few seconds
+      if (state.prefs.dim && !sess.dimmed && !sess.paused && performance.now() - sess.lastTouch > 12000) { sess.dimmed = true; $("#dim").hidden = false; }
+    }
+    // track, clock and the slow sunrise
+    sess.plan.forEach((q, k) => { const f = k < i ? 1 : k > i ? 0 : Math.min(1, (e - q.t0) / q.dur); const bar = $("#session .track span:nth-child(" + (k + 1) + ") i"); if (bar) bar.style.width = (f * 100).toFixed(1) + "%"; });
+    const clock = $("#s-clock"); if (clock) clock.textContent = p.kind === "sit" && !state.prefs.showTimer ? "" : fmtClock(sess.total - e);
+    window.Scene?.setDawn(.04 + .96 * (e / sess.total));
+  }
+  function togglePause() {
+    if (!sess) return;
+    if (sess.paused) { sess.paused = false; sess.runStart = performance.now(); sess.si = -1; $("#s-pause").textContent = "Pause"; setDrone(state.prefs.drone); }
+    else {
+      sess.acc = elapsed(); sess.paused = true; stopTone(); window.speechSynthesis?.cancel();
+      const ring = $("#p-ring"); if (ring) { ring.style.transform = getComputedStyle(ring).transform; ring.style.transition = "none"; }
+      $("#s-pause").textContent = "Resume"; if ($("#p-word")) $("#p-word").textContent = "Paused";
+    }
+  }
+  function skipTo(i) { if (!sess || !sess.plan[i]) return; sess.acc = sess.plan[i].t0; sess.runStart = performance.now(); sess.paused = false; stopTone(); tick(); }
+  function stopSession() {
+    clearInterval(tickT); tickT = null; stopTone(); window.speechSynthesis?.cancel(); setDrone(false); setNature(false); keepAwake(false);
+    $("#session").hidden = true; $("#session").innerHTML = ""; $("#dim").hidden = true; $("#app").hidden = false;
+  }
+  function record(full) {
+    const k = todayKey(), e = Math.round(elapsed());
+    const phases = {}; sess.plan.forEach((p) => { phases[p.id] = Math.round(Math.max(0, Math.min(p.dur, e - p.t0))); });
+    if (done(k)) { (state.logs[k].extra = state.logs[k].extra || []).push({ start: sess.startedAt, dur: e }); }
+    else state.logs[k] = { status: "done", start: sess.startedAt, dur: e, phases, partial: !full };
+    save(true);
+  }
+  function finish() {
+    clearInterval(tickT); tickT = null; stopTone(); $("#dim").hidden = true;
+    window.Scene?.setDawn(1); window.Scene?.breath(.6);
+    chime(3);
+    $("#s-stage").innerHTML = `<h2 class="ph-name"><small>Complete</small>Sit for a moment</h2>
+      <p class="cue">Let the mantra settle. Offer the practice at your guru's feet.</p>
+      <div class="s-foot"><button class="btn btn-primary" id="s-done">Complete tonight</button></div>`;
+    $("#s-clock").textContent = "";
+    $("#s-done").onclick = () => { record(true); const n = status()?.streak || 0; stopSession(); renderHome(); toast(n > 1 ? `${n} nights in a row.` : "Tonight is complete."); };
+    $("#s-x").onclick = () => $("#s-done").click();
+  }
+  function endBox() {
+    if (!sess) return;
+    const e = elapsed(), far = e >= sess.total * .75;
+    const o = document.createElement("div"); o.className = "overlay";
+    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>End tonight's practice?</h2>
+      <p>${far ? "You are most of the way through. You can count tonight." : "Tonight will not be counted."}</p>
+      <div class="col">${far ? `<button class="btn btn-primary btn-sm" id="e-count">End and count tonight</button>` : ""}<button class="btn btn-ghost btn-sm" id="e-end">End</button><button class="link" id="e-keep">Keep going</button></div></div>`;
+    document.body.appendChild(o);
+    $("#e-keep", o).onclick = () => o.remove();
+    $("#e-end", o).onclick = () => { o.remove(); stopSession(); renderHome(); };
+    $("#e-count", o)?.addEventListener("click", () => { o.remove(); record(false); stopSession(); renderHome(); toast("Tonight is counted."); });
+  }
+  // a tap while dimmed brings the screen back; it dims again after a while
+  $("#dim").addEventListener("click", () => { if (!sess) return; sess.dimmed = false; sess.lastTouch = performance.now(); $("#dim").hidden = true; });
+  document.addEventListener("pointerdown", () => { if (sess) sess.lastTouch = performance.now(); }, true);
+
+  // =========================================================
+  // SETTINGS
+  // =========================================================
+  function confirmBox(title, body, yes, onYes) {
+    const o = document.createElement("div"); o.className = "overlay";
+    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>${esc(title)}</h2><p>${esc(body)}</p><div class="row"><button class="btn btn-primary btn-sm" id="c-y">${esc(yes)}</button><button class="link" id="c-n">Cancel</button></div></div>`;
+    document.body.appendChild(o);
+    $("#c-n", o).onclick = () => o.remove(); $("#c-y", o).onclick = () => { o.remove(); onYes(); };
+  }
+  function archive() { const st = status(); if (state.vow && st?.doneCount) state.history.push({ startKey: state.vow.startKey, endKey: todayKey(), days: state.vow.days, done: st.doneCount }); }
+  function openRestart(fromComplete, settings) {
+    const st = status(), v = state.vow;
+    const o = document.createElement("div"); o.className = "overlay";
+    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>${fromComplete ? "A new vow" : "Restart your vow?"}</h2>
+      <p>${!fromComplete && st?.doneCount ? `You have completed ${st.doneCount} of ${v.days} nights. ` : ""}${fromComplete ? "" : "Your streak goes back to zero. "}The earlier vow is kept in your history.</p>
+      <div class="col"><button class="btn btn-primary btn-sm" id="r-same">Begin again from night 1 (${v.days} nights)</button><button class="btn btn-ghost btn-sm" id="r-new">Choose a different length</button><button class="link" id="r-n">${fromComplete ? "Not now" : "Keep going"}</button></div></div>`;
+    document.body.appendChild(o);
+    const close = () => { o.remove(); settings?.remove(); };
+    $("#r-n", o).onclick = () => o.remove();
+    $("#r-same", o).onclick = () => { close(); archive(); delete state.logs[todayKey()]; state.vow = { ...v, startKey: todayKey(), created: Date.now() }; save(true); renderHome(); toast("Night 1 begins tonight."); };
+    $("#r-new", o).onclick = () => { close(); archive(); delete state.logs[todayKey()]; Object.assign(setup, { step: 0, days: v.days, custom: ![21, 40, 108].includes(v.days), startOff: 0, med: state.prefs.min.med }); state.vow = null; save(true); renderHome(); };
+  }
+  function openSettings() {
+    const p = state.prefs;
+    const o = document.createElement("div"); o.className = "overlay";
+    const sw = (id, on, label, sub) => `<div class="toggle"><span class="lbl">${label}${sub ? `<br><small class="hint">${sub}</small>` : ""}</span><button class="sw ${on ? "on" : ""}" id="${id}" role="switch" aria-checked="${!!on}" aria-label="${esc(label)}"></button></div>`;
+    const mins = () => ORDER.map((id) => `<div class="prow"><span class="lbl">${esc(PHASES[id].name)}<small>${esc(PHASES[id].tag)}</small></span><span class="mini"><button data-id="${id}" data-d="-1" aria-label="Less">–</button><b>${p.min[id] ? p.min[id] + " min" : "Off"}</b><button data-id="${id}" data-d="1" aria-label="More">+</button></span></div>`).join("");
+    o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true"><h2>Settings</h2>
+      <div class="sec"><h3>Tonight's practice</h3><div id="o-mins" class="col" style="align-items:stretch">${mins()}</div><p class="hint" id="o-total">About ${plannedMin()} minutes in all.</p></div>
+      <div class="sec"><h3>During meditation</h3>
+        <div class="field"><label>Soft chime every</label><div class="seg" id="o-chime">${[0, 5, 10, 15].map((n) => `<button data-n="${n}" class="${p.chime === n ? "on" : ""}">${n ? n + " min" : "Off"}</button>`).join("")}</div></div>
+        <p class="hint">A sweet chime always marks the end.</p>
+        ${sw("o-timer", p.showTimer, "Show the timer")}${sw("o-dim", p.dim, "Dim the screen", "Tap to bring it back")}</div>
+      <div class="sec"><h3>Sound</h3>${sw("o-drone", p.drone, "Tanpura")}${sw("o-nature", p.nature, "Wind and river")}${sw("o-tones", p.tones, "Breath tones", "Rise on the in-breath, fall on the out-breath; left or right ear in Nadi Shodhan")}${sw("o-voice", p.voice, "Spoken guidance", "Each phase is announced, so you can keep your eyes closed")}</div>
+      ${state.vow ? `<div class="sec"><h3>Your vow</h3><p class="hint">${state.vow.days} nights, from ${fmtDate(state.vow.startKey)}.</p><button class="btn btn-ghost btn-sm" id="o-restart">Restart or change the vow</button></div>` : ""}
+      <div class="sec"><h3>Image credit</h3><p class="hint">Sri Yantra: artwork by Daniel Conrad under the direction of Harish Johari (1974), public domain, via Wikimedia Commons.</p></div>
+      <button class="btn btn-primary" id="o-ok">Done</button></div>`;
+    document.body.appendChild(o);
+    const bindMins = () => o.querySelectorAll("#o-mins button").forEach((b) => b.onclick = () => {
+      const id = b.dataset.id, step = id === "med" ? 5 : 1, lo = id === "med" ? 5 : 0;
+      p.min[id] = Math.max(lo, Math.min(PHASES[id].max, p.min[id] + step * +b.dataset.d));
+      $("#o-mins", o).innerHTML = mins(); $("#o-total", o).textContent = `About ${plannedMin()} minutes in all.`; bindMins();
+    });
+    bindMins();
+    o.querySelectorAll("#o-chime button").forEach((b) => b.onclick = () => { p.chime = +b.dataset.n; o.querySelectorAll("#o-chime button").forEach((x) => x.classList.toggle("on", x === b)); if (p.chime) chime(1); });
+    const tg = (id, key, after) => { $("#" + id, o).onclick = (e) => { p[key] = !p[key]; e.currentTarget.classList.toggle("on", p[key]); e.currentTarget.setAttribute("aria-checked", p[key]); after?.(); }; };
+    tg("o-timer", "showTimer"); tg("o-dim", "dim"); tg("o-drone", "drone"); tg("o-nature", "nature"); tg("o-tones", "tones"); tg("o-voice", "voice", () => p.voice && say("Spoken guidance is on."));
+    $("#o-restart", o)?.addEventListener("click", () => openRestart(false, o));
+    $("#o-ok", o).onclick = () => { save(true); o.remove(); if (!sess) renderHome(); };
+  }
+
+  // ---------- boot ----------
+  $("#b-settings").onclick = openSettings;
+  if (EMBED) { $("#b-exit").hidden = false; $("#b-exit").onclick = () => window.parent.postMessage({ type: "nitya:exit" }, location.origin); }
+  renderHome();
+  setInterval(() => { if (!sess && state.vow) renderHome(); }, 60000);
+})();
+</script>
+</body></html>
