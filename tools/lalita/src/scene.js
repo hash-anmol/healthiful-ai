@@ -94,6 +94,7 @@
   const loadTex = (src) => { const t = new THREE.TextureLoader().load(src); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t; };
   const yantraTex = loadTex(ASSETS.yantra);
   const lalitaTex = loadTex(ASSETS.lalita);
+  const guruTex = ASSETS.guru ? loadTex(ASSETS.guru) : null;
   const ganeshTex = cvs(512, 512, (g, W) => {
     const c = W / 2; const grad = g.createRadialGradient(c, c, 20, c, c, c); grad.addColorStop(0, "#e2551f"); grad.addColorStop(1, "#8c2511");
     g.fillStyle = grad; g.beginPath(); g.arc(c, c, c - 6, 0, 7); g.fill();
@@ -217,10 +218,10 @@
   gPts.forEach((p, i) => { tmpM.makeTranslation(...p); garland.setMatrixAt(i, tmpM); garland.setColorAt(i, tmpC.set(i % 3 === 0 ? 0xffb21a : i % 3 === 1 ? 0xff8a10 : 0xffcf3a)); });
   garland.castShadow = true; scene.add(garland);
 
-  // Framed portrait of Mother Lalita on the back wall, with a marigold garland
-  {
-    const pw = .62, ph = .62 * (1260 / 960), px = -1.42, py = 1.52, pz = -2.965;
-    const portrait = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: lalitaTex, roughness: .7, emissive: 0xffffff, emissiveMap: lalitaTex, emissiveIntensity: .28 }));
+  // Framed pictures on the back wall, each with a brass frame and a marigold garland:
+  // Mother Lalita to the left of the mandir, and the sadhak's guru beside her (the side the text panel leaves visible)
+  function framedPicture(tex, pw, ph, px, py, pz) {
+    const portrait = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: tex, roughness: .7, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: .28 }));
     portrait.position.set(px, py, pz); scene.add(portrait);
     const fr = .05;
     add(new THREE.BoxGeometry(pw + fr * 2, fr, .05), M.brass, px, py + ph / 2 + fr / 2, pz + .01);
@@ -232,8 +233,10 @@
     gp.forEach((q, i) => { tmpM.makeTranslation(...q); gl.setMatrixAt(i, tmpM); gl.setColorAt(i, tmpC.set(i % 3 === 0 ? 0xffb21a : i % 3 === 1 ? 0xff8a10 : 0xffcf3a)); });
     scene.add(gl);
     const pg = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffb060, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: .18 }));
-    pg.scale.set(1.4, 1.7, 1); pg.position.set(px, py, pz + .08); scene.add(pg);
+    pg.scale.set(pw * 2.25, ph * 2.1, 1); pg.position.set(px, py, pz + .08); scene.add(pg);
   }
+  framedPicture(lalitaTex, .62, .62 * (1260 / 960), -1.42, 1.52, -2.965);
+  if (guruTex) framedPicture(guruTex, .58, .58 * (543 / 600), -2.14, 1.46, -2.965);
 
   // Ganesh plaque on the left of the chowki
   const ganesh = new THREE.Mesh(new THREE.CircleGeometry(.15, 48), new THREE.MeshStandardMaterial({ map: ganeshTex, roughness: .6, emissive: 0xffffff, emissiveMap: ganeshTex, emissiveIntensity: .08 }));
@@ -375,6 +378,7 @@
     altar:  [[0, 1.3, .25], [0, .9, -2.3]],
     earth:  [[0, 1.55, .7], [0, .05, -1.0]],
     yantra: [[0, 1.05, -.75], [0, 1.0, -2.5]],
+    guru:   [[-1.15, 1.45, -.5], [-2.14, 1.4, -2.95]],
     offer:  [[0, 1.12, -.45], [0, .62, -2.15]],
     paath:  [[0, 1.3, .45], [0, .98, -2.35]],
     "offer-all": [[0, 1.5, 1.3], [0, .9, -2.2]]
